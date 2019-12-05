@@ -57,7 +57,7 @@ class PongGame(Env):
 	
 	def _seed(self, seed=None):
 		self.rng.seed(seed)
-	def _reset(self):
+	def reset(self):
 		self.is_finished = False
 		self.paddle1, self.paddle2, self.reward = PongObject([HALF_PAD_WIDTH - 1,HEIGHT/2], 0), PongObject([WIDTH +1 - HALF_PAD_WIDTH,HEIGHT/2], 0), 0
 		
@@ -67,10 +67,10 @@ class PongGame(Env):
 			self.ball = PongObject([WIDTH/2,HEIGHT/2], [-horz, vert])
 		else:
 			self.ball = PongObject([WIDTH/2,HEIGHT/2], [horz, vert])
-		return self._step([0,0])[0]
+		return self.step([0,0])[0]
 	
 	#draw function of canvas
-	def _step(self, action):
+	def step(self, action):
 		self.paddle1.accelerate(action[0])
 		self.paddle2.accelerate(action[1])
 
@@ -124,7 +124,7 @@ class PongGame(Env):
 		self.screen = sarray.array3d(self.canvas)
 		return self.screen, self.reward, self.is_finished, None
 		
-	def _render(self,mode='human',close=False):
+	def render(self,mode='human',close=False):
 		if close:
 			if self.viewer is not None:
 				self.viewer.close()

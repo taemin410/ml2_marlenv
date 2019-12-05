@@ -13,10 +13,10 @@ register(
 	entry_point='envs.checkers:Checkers',
 )
 
-# register(
-# 	id='PongDuel-v0',
-# 	entry_point='envs.pong_duel:PongDuel',
-# )
+register(
+	id='PongDuel-v0',
+	entry_point='envs.pong_duel:PongDuel',
+)
 
 #    kwargs={'full_observable': True}
 
@@ -30,6 +30,21 @@ register(
 register(
 	id='PredatorPrey-v1',
 	entry_point='envs.predator_prey:PredatorPrey',
+	kwargs={
+		'full_observable' : True
+	
+		}
+	)
+
+register(
+    id='Combat-v0',
+    entry_point='envs.combat:Combat',
+)
+
+
+register(
+	id='Combat-v1',
+    entry_point='envs.combat:Combat',
 	kwargs={
 		'full_observable' : True
 	
