@@ -1,6 +1,11 @@
 from gym.envs.registration import registry, register, make, spec
 import gym
+import os 
+import numpy as np
+import random 
 
+from envs.snakegame.common import Direction, Point
+from envs.snakegame.python import Python 
 
 register(
 	id='Pong-2p-v0',
@@ -48,5 +53,22 @@ register(
 	kwargs={
 		'full_observable' : True
 	
+		}
+	)
+
+init_map = os.path.join('envs/snakegame' ,'10x10.txt')
+#randomize snake's initial position 
+players = [
+    Python(Point(np.random.randint(3, 7, 1)[0],np.random.randint(3, 7, 1)[0]), Direction.SOUTH, 1)
+
+]
+
+register(
+	id='Snakegame-v0',
+    entry_point='envs.snakegame:SnakeGameMultiEnv',
+	kwargs={
+		'full_observable' : True , 
+		'init_map' : init_map,
+		'players' : players		
 		}
 	)

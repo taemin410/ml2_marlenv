@@ -52,3 +52,24 @@ def test_Combat():
 
 
 
+def test_Snake():
+
+
+	env = gym.make('Snakegame-v0')
+
+	env.reset()
+	done_n = [False for _ in range(env.n_agents)]
+
+	while not all(done_n):
+	    
+	    actions = []
+	    env.render()
+	    for i in range(env.n_agents):
+	        actions.append(env.action_space[i].sample())
+	        
+	    s, r, done_n, _ = env.step(actions)
+	    
+	    time.sleep(0.25)
+
+	env.close()
+

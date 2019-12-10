@@ -32,4 +32,9 @@ class Direction:
     SOUTH = Point(0, 1)
     WEST = Point(-1, 0)
 
+    DIRECTIONLIST= [None] * 4 
     
+    DIRECTIONLIST[0] = Point(0, -1)
+    DIRECTIONLIST[1] = Point(1, 0)
+    DIRECTIONLIST[2] = Point(0, 1)
+    DIRECTIONLIST[3] = Point(-1, 0)

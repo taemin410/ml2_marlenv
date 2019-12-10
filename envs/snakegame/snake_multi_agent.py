@@ -1,45 +1,64 @@
-
+from gym import spaces 
 # from ray.rllib.env.multi_agent_env import MultiAgentEnv
 from ..utils.multienv import MultiAgentEnv
+from ..utils.action_space import MultiAgentActionSpace
+from ..utils.observation_space import MultiAgentObservationSpace
+from envs.snakegame.common import Point, Cell, Direction
+from envs.snakegame.field import Field
+from envs.snakegame.python import Python
+import numpy as np
+import random 
 
-from snakegame.common import Point, Cell, Direction
-from snakegame.field import Field
-from snakegame.python import Python
+class Action:
+    IDLE = 0
+    LEFT = 1
+    RIGHT = 2
+    UP = 3
+    DOWN = 4
+
+
+class Reward:
+    FRUIT = 1
+    KILL = 0
+    LOSE = 0
+    WIN = 0
+    TIME = 0
+    # count-based bonus
+    alpha = 0
+    beta = 0
 
 
 class SnakeGameMultiEnv(MultiAgentEnv):
-    def __init__(self, init_map, players=None, full_observation=False, vision_range=10, num_agents=2):
+    def __init__(self, init_map, players=None, full_observable=False, vision_range=10, num_agents=1):
 
     	#number of agent & observability initialized
- 		super().__init__(num_agents=2, full_observation = full_observation)
-
+        super().__init__(num_agents, full_observable)
 
  		#Store map and players data
         self.init_map = init_map
+
+
+
         self.players = players
-        self.num_players = len(self.field.players)
 
         #Draw map on field object
         self.field = Field(init_map, players)
+        self.num_players = len(self.field.players)
+
         self.visits = np.zeros((self.num_players, np.prod(self.field.size)))
 
-        if self.full_observation:
-        #give the whole field to the observation space
-            self.observation_space = Box(
-            low=0,
-            high=2,
-            shape=(self.num_players, 4, self.field.size[0], self.field.size[1])
-        )
-        else:
-            # Set vision range to vision_range(nxn)
-            self.observation_space = Box(
-                low=0,
-                high=2,
-                shape=(self.num_players, 4, vision_range, vision_range)
-            )
-        
-        self.action_space = Discrete(5)
+        self._obs_low =  0
+        self._obs_high = 2
 
+        self.action_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_agents)])
+
+        if self.full_observable:
+        #give the whole field to the observation space
+            self.observation_space = MultiAgentObservationSpace([spaces.Box(self._obs_low, self._obs_high, shape=(self.num_players, 4, self.field.size[0], self.field.size[1])) for _ in range(self.n_agents)])
+        else:
+        # Set vision range to vision_range(nxn)
+            self.observation_space = MultiAgentObservationSpace([spaces.Box(self._obs_low, self._obs_high, shape=(self.num_players, 4, vision_range, vision_range)) for _ in range(self.n_agents)])
+                    
         self.reset()
 
     def reset(self):
@@ -49,6 +68,7 @@ class SnakeGameMultiEnv(MultiAgentEnv):
         #randomize snake's initial position 
         players = [
             Python(Point(np.random.randint(3, self.field.size[1]-5, 1)[0],np.random.randint(3, self.field.size[0]-5, 1)[0]), random.choice(Direction.DIRECTIONLIST), 1)
+        
         ]
 
         self.field = Field(self.init_map, players)
@@ -65,10 +85,14 @@ class SnakeGameMultiEnv(MultiAgentEnv):
         #Create fruit on one cell 
         self.fruit = self.field.get_empty_cell()
         self.field[self.fruit] = Cell.FRUIT
+        if self.full_observable:
+            return self.full_observation()
+        else:
+            return self.encode()
 
-        return self.full_observation()
 
     def step(self, actions):
+        print( actions, self.num_players)
         assert len(actions) == self.num_players
         self.epinfos['step'] += 1
         rewards = np.zeros(self.num_players)
@@ -102,7 +126,7 @@ class SnakeGameMultiEnv(MultiAgentEnv):
 
             # Eat fruit
             if self.field[python.next] == Cell.FRUIT:
-                # python.grow()
+                python.grow()
                 rewards[idx] += Reward.FRUIT
                 self.epinfos['fruits'][idx] += 1
                 if python.head == self.fruit:
@@ -149,8 +173,12 @@ class SnakeGameMultiEnv(MultiAgentEnv):
             rewards[idx] += Reward.WIN
         
         self.epinfos['scores'] += rewards
-    
-        return self.full_observation(), rewards, self.dones, self.epinfos
+        
+        if self.full_observable:
+            return self.full_observation(), rewards, self.dones, self.epinfos
+        else:
+            return self.encode(), rewards, self.dones, self.epinfos
+
 
     def full_observation(self):
         self.field.clear()
@@ -169,7 +197,8 @@ class SnakeGameMultiEnv(MultiAgentEnv):
         fruit = np.isin(self.field._cells, Cell.FRUIT).astype(np.float32)
         wall = np.isin(self.field._cells, Cell.WALL).astype(np.float32)
 
-        state = np.zeros(self.observation_space.shape)
+        # print(self.observation_space[0].shape)
+        state = np.zeros(self.observation_space[0].shape)
         for idx in range(self.num_players):
             if self.field.players[idx].alive:
                 state[idx][0] = body[idx]
@@ -196,9 +225,10 @@ class SnakeGameMultiEnv(MultiAgentEnv):
         fruit = np.isin(self.field._cells, Cell.FRUIT).astype(np.float32)
         wall = np.isin(self.field._cells, Cell.WALL).astype(np.float32)
 
-        state = np.zeros(self.observation_space.shape)
         for idx in range(self.num_players):
             if self.field.players[idx].alive:
+                state = np.zeros(self.observation_space[idx].shape)
+
                 state[idx][0] = self.get_vision(idx, body[idx])
                 state[idx][1] = self.get_vision(idx, np.sum(body, axis=0) - body[idx])
                 # state[idx][1] = fruit 

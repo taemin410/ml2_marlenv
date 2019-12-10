@@ -3,28 +3,20 @@ from gym import spaces
 from gym.envs.registration import EnvSpec
 import numpy as np
 
-from multiagent.multi_discrete import MultiDiscrete
 from ..utils.action_space import MultiAgentActionSpace
 from ..utils.observation_space import MultiAgentObservationSpace
 
 
 class MultiAgentEnv(gym.Env):
 
-    def __init__(self, n_agents, full_observation):
+    def __init__(self, n_agents, full_observable):
 
 
         self.n_agents = n_agents
-        self.full_observation = full_observation
-
-        self._obs_low =  0
-        self._obs_high = 2
-
-        self.action_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_agents)])
-        self.observation_space = MultiAgentObservationSpace([spaces.Box(self._obs_low, self._obs_high) for _ in range(self.n_agents)])
+        self.full_observable = full_observable
 
         self._colaboration_reward = None
         self._step_count = 0 
-
 
 
 
@@ -37,28 +29,10 @@ class MultiAgentEnv(gym.Env):
         
         raise NotImplementedError
 
+    def render(self):
 
-
-
-        # self._step_count += 1
-        # rewards = [self._step_cost for _ in range(self.n_agents)]
-
-        # for agent_i, action in enumerate(agents_actions):
-        #     if not (self._agent_dones[agent_i]):
-        #         reward[agent_i] = policy[agent_i](action)
-
-        # for agent_i in range(self.n_agents):
-        #     rewards[agent_i] += _reward
-
-        # # if (self._step_count >= self._max_steps) or (True not in self._prey_alive):
-        # #     for i in range(self.n_agents):
-        # #         self._agent_dones[i] = True
-
-        # for i in range(self.n_agents):
-        #     self._colaboration_reward[i] += rewards[i]
-
-        # return self.get_agent_obs(), rewards, self._agent_dones, {'prey_alive': self._prey_alive}
-
+        raise NotImplementedError
+        
 
     # def get_agent_obs(self):
     #     _obs = []

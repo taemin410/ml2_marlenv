@@ -2,8 +2,8 @@
 import numpy as np
 import torch
 import pygame
-from ml2_python.common import Cell, Direction
-from ml2_python.environment import Action
+from envs.snakegame.common import Cell, Direction
+from envs.snakegame.snake_multi_agent import Action
 
 
 class Color:
