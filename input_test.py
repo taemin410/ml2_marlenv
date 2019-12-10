@@ -29,27 +29,3 @@ if __name__ == '__main__':
 
         print('Episode #{} Reward: {}'.format(ep_i, ep_reward))
     env.close()
-
-
-inputs = ["11", "22", "33", "44", "11", "22", "33", "00", "44", "11", "22", "33", "44"]
-
-
-def test_Checkers_input():
-    env = gym.make("Checkers-v0")
-
-    for ep_i in range(len(inputs)):
-        done_n = [False for _ in range(env.n_agents)]
-        ep_reward = 0
-
-        obs_n = env.reset()
-        env.render()
-        while not all(done_n):
-            action_n = [int(_) for _ in inputs[ep_i]]
-            print(action_n)
-
-            obs_n, reward_n, done_n, _ = env.step(action_n)
-            ep_reward += sum(reward_n)
-            env.render()
-
-        print('Episode #{} Reward: {}'.format(ep_i, ep_reward))
-    env.close()
