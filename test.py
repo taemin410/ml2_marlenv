@@ -7,6 +7,8 @@ from envs.snakegame.graphics import ML2PythonGUI
 import policy
 import argparse
 import torch 
+import numpy as np
+
 
 # class SimpleCorridor(gym.Env):
 #     def __init__(self, config):
@@ -38,29 +40,67 @@ import torch
 
 
 
-def human_1p(args):
-    env = gym.make('Snakegame-v0')
+# def human_1p(args):
+#     env = gym.make('Snakegame-v0')
 
-    n_ac = env.action_space[0].n
-    in_shape = (env.observation_space[0].shape[1]*2,
-                *env.observation_space[0].shape[2:])
-    net = policy.PythonNet(in_shape, n_ac)
+#     n_ac = env.action_space[0].n
+#     in_shape = (env.observation_space[0].shape[1]*2,
+#                 *env.observation_space[0].shape[2:])
+#     net = policy.PythonNet(in_shape, n_ac)
 
-    gui = ML2PythonGUI(env, args)
-    gui.run(net)
+#     gui = ML2PythonGUI(env, args)
+#     gui.run(net)
 
-parser = argparse.ArgumentParser(description="I Won(Tae)-Chu!")
+# parser = argparse.ArgumentParser(description="I Won(Tae)-Chu!")
 
-parser.add_argument("--tag", type=str, default='snake_test')
-parser.add_argument("--mode", type=str, default='single')
-parser.add_argument("--seed", type=int, default=100)
+# parser.add_argument("--tag", type=str, default='snake_test')
+# parser.add_argument("--mode", type=str, default='single')
+# parser.add_argument("--seed", type=int, default=100)
 
-parser.add_argument_group("interface options")
-parser.add_argument("--human", action='store_true')
-parser.add_argument("--cell_size", type=int, default=20)
+# parser.add_argument_group("interface options")
+# parser.add_argument("--human", action='store_true')
+# parser.add_argument("--cell_size", type=int, default=20)
 
-args = parser.parse_args()
-args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# args = parser.parse_args()
+# args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-human_1p(args)
+# human_1p(args)
+
+
+# env = gym.make('GridExplore-v0')
+
+
+# env.reset()
+# done_n = [False for _ in range(env.n_agents)]
+# env.action_space[0].np_random.seed(123)
+
+# while not all(done_n):
+    
+#     actions = []
+#     env.render()
+#     for i in range(env.n_agents):
+#         actions.append(env.action_space[i].sample())
+#     # actions[0] = int(input("move?"))
+#     # print(actions)
+#     s, r, done_n, _ = env.step(actions)
+
+    
+#     time.sleep(0.05)
+
+# print("REWARDS: " , r)
+# env.render()
+
+# env.close()
+
+# actions = [3,2,1,3]
+
+
+# a.step(actions)
+
+
+# a.render()
+
+
+# print( a.isNear(a.agentList[0], a.agentList[2],5 ))
+

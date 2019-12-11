@@ -6,7 +6,7 @@ class GridWorld(gym.Env):
 
 
 	def __init__(self):
-
+		
 		raise NotImplementedError
 
 	def reset(self):

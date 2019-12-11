@@ -72,3 +72,13 @@ register(
 		'players' : players		
 		}
 	)
+
+register(
+	id='GridExplore-v0',
+	entry_point='envs.grid_explore:GridExplore',
+	kwargs={
+		'full_observable' : False,
+		'size' : 15
+	}
+)
+
