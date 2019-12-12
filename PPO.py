@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.distributions import Categorical
 import gym
 import envs 
@@ -135,23 +136,43 @@ class PPO:
 class ConvNet(nn.Module):
     def __init__(self, n_actions=5):
         super(ConvNet, self).__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(4, 16, kernel_size=15, stride=1, padding=2),
-             nn.BatchNorm2d(16),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2))
-        # self.layer2 = nn.Sequential(
-        #     nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2),
-        #      nn.BatchNorm2d(32),
+        # self.layer1 = nn.Sequential(
+        #     nn.Conv2d(4, 16, kernel_size=15, stride=1, padding=2),
+        #      nn.BatchNorm2d(16),
         #     nn.ReLU(),
         #     nn.MaxPool2d(kernel_size=2, stride=2))
+        # # self.layer2 = nn.Sequential(
+        # #     nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2),
+        # #      nn.BatchNorm2d(32),
+        # #     nn.ReLU(),
+        # #     nn.MaxPool2d(kernel_size=2, stride=2))
         
-        self.fc = nn.Linear(2*32, n_actions)
+
+
+        self.conv1 = nn.Conv2d(4, 32, 3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, 3, stride=1, padding=1)
+        self.conv3 = nn.Conv2d(64, 64, 3, stride=1, padding=1)
+
+        self.enc = nn.Sequential(
+            self.conv1, 
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            self.conv2, 
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            # self.conv3, 
+            # nn.ReLU(),
+            # nn.MaxPool2d(kernel_size=2, stride=2),
+        )
+
+        self.linear1 = nn.Linear(64 * 3 * 3, 512)
+
+        self.fc = nn.Linear(512, n_actions)
         
     def forward(self, x):
-        out = self.layer1(x)
-        # out = self.layer2(out)
+        out = self.enc(x)
         out = out.reshape(out.size(0), -1)
+        out = F.relu(self.linear1(out))
         out = self.fc(out)
         return out
 
@@ -170,7 +191,7 @@ def main():
     model = ConvNet(action_dim).to(device)
 
     render = False
-    solved_reward = 200         # stop training if avg_reward > solved_reward
+    solved_reward = 50         # stop training if avg_reward > solved_reward
     log_interval = 20           # print avg reward in the interval
     max_episodes = 5000        # max training episodes
     max_timesteps = 500         # max timesteps in one episode
@@ -204,7 +225,7 @@ def main():
         # print("length of state arr is : " ,type(state))
         for t in range(max_timesteps):
             timestep += 1
-            env.render()
+           # env.render()
 
             state = np.array([state])
             # print(type(state))
@@ -215,10 +236,9 @@ def main():
             action = ppo.policy_old.act(outputs, memory)
             state, reward, done, _ = env.step([action])
 
-            print(reward)
             # Saving reward and is_terminal:
             memory.rewards.append(reward)
-            memory.is_terminals.append(done)
+            memory.is_terminals.append(done[0])
             
             # update if its time
             if timestep % update_timestep == 0:
@@ -226,7 +246,7 @@ def main():
                 memory.clear_memory()
                 timestep = 0
             
-            running_reward += reward
+            running_reward += reward[0]
             if render:
                 env.render()
             if all(done):
@@ -249,7 +269,9 @@ def main():
             running_reward = 0
             avg_length = 0
         
+#summary writer - > event add scalar -> stepnum 
 
 if __name__ == '__main__':
     main()
+
     
