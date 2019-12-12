@@ -19,7 +19,7 @@ def gridexplore(args):
     while not all(done_n):
         
         actions = []
-        env.render()
+        # env.render()
         for i in range(env.n_agents):
             actions.append(env.action_space[i].sample())
         # actions[0] = int(input("move?"))

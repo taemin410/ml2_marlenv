@@ -37,7 +37,7 @@ class Move:
 	STAY = 4 
 
 class Rewards:
-	TIMEPENALTY = -1
+	TIMEPENALTY = -1.0
 	EXPLORATION_BONUS = 1
 
 
@@ -88,7 +88,7 @@ class Agent:
 
 class GridExplore(GridWorld):
 
-	def __init__(self, size, n_agents=4, full_observable=False, dist_penalty=5):
+	def __init__(self, size, n_agents=1, full_observable=False, dist_penalty=5):
 
 		self.size = size
 		self.grid = [ [0 for _ in range(size)] for _ in range(size)]
@@ -105,7 +105,7 @@ class GridExplore(GridWorld):
 		self.viewer = None
 
 		self.observation_space = MultiAgentObservationSpace([spaces.Box(low=0,high=6,shape=(4, self.size, self.size)) for _ in range(self.n_agents)])
-
+	
 		self.action_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_agents)])
 
 		# self.render()
@@ -113,6 +113,11 @@ class GridExplore(GridWorld):
 	def reset(self):
 
 		self.__init_full_obs()
+		self.agentList=[]
+		self.grid = [ [0 for _ in range(self.size)] for _ in range(self.size)]
+		self._grid_shape=[self.size,self.size]
+		self.__setwall()
+
 		for i in range(self.n_agents):			
 			x, y = self.__getEmptyCell()
 			self.__putAgent(x,y, Cell.AGENTS[i])
@@ -164,10 +169,12 @@ class GridExplore(GridWorld):
 		
 		#TIME PENALTY + EXPLORATION REWARD
 		for i in range(self.n_agents):
+
+
 			rewards[i] += (self.searchArea(self.agentList[i]) + Rewards.TIMEPENALTY)
-		
-		rewards += self.distancePenalty(self.agentList)
-		print(rewards)
+
+		rewards = rewards + self.distancePenalty(self.agentList)
+		# print(rewards)
 		if not any(0  in i for i in self.grid):
 			dones = [True,True,True,True]
 
@@ -257,7 +264,7 @@ class GridExplore(GridWorld):
 			# print("")
 
 
-		return reward 
+		return float(reward) 
 
 	def distance(self, pos1, pos2):
 		return math.sqrt( (pos2.y - pos1.y)**2 + (pos2.x-pos1.x)**2 ) 
@@ -271,11 +278,13 @@ class GridExplore(GridWorld):
 
 	def distancePenalty(self, agentlist, distance=2):
 		rewards = np.zeros(len(agentlist))
-		for i in range(len(agentlist)):
-			for j in range(i+1, len(agentlist)):
-				if self.isNear(agentlist[i], agentlist[j], distance):
-					rewards[i] -= 1
-					rewards[j] -= 1
+		if len(agentlist) > 1 :
+
+			for i in range(len(agentlist)):
+				for j in range(i+1, len(agentlist)):
+					if self.isNear(agentlist[i], agentlist[j], distance):
+						rewards[i] -= 1
+						rewards[j] -= 1
 
 		return rewards
 
@@ -286,7 +295,7 @@ class GridExplore(GridWorld):
 
 	def observation(self):
 
-		statearray= [] 
+		statearray= np.zeros(self.observation_space[0].shape) 
 		for i in self.agentList:
 
 			state = np.zeros(self.observation_space[0].shape)
@@ -308,7 +317,7 @@ class GridExplore(GridWorld):
 				state[2] = visited
 				state[3] = wall
 
-			statearray.append(state)
+				statearray = state
 		
 		return statearray
     
