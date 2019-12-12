@@ -10,6 +10,19 @@ from gym import spaces
 from PIL import ImageColor
 import copy
 
+CELL_SIZE = 30
+
+PRE_IDS = {
+    'agent': ['3','4','5','6'],
+    'wall': '2',
+    'empty': '0',
+    'visited':'1'
+}
+
+WALL_COLOR = 'black'
+VISITED_COLOR = 'grey'
+AGENT_COLOR = 'green'
+
 class Cell:
     UNVISITED = 0
     VISITED = 1
@@ -75,7 +88,7 @@ class Agent:
 
 class GridExplore(GridWorld):
 
-	def __init__(self, size, n_agents=4, full_observable=False):
+	def __init__(self, size, n_agents=4, full_observable=False, dist_penalty=5):
 
 		self.size = size
 		self.grid = [ [0 for _ in range(size)] for _ in range(size)]
@@ -84,6 +97,7 @@ class GridExplore(GridWorld):
 		self.agentList=[]
 		self.time= 0
 		self.n_agents=n_agents
+		self.dist_penalty = dist_penalty 
 
 		self.__setwall()
 		
@@ -151,7 +165,9 @@ class GridExplore(GridWorld):
 		#TIME PENALTY + EXPLORATION REWARD
 		for i in range(self.n_agents):
 			rewards[i] += (self.searchArea(self.agentList[i]) + Rewards.TIMEPENALTY)
-			
+		
+		rewards += self.distancePenalty(self.agentList)
+		print(rewards)
 		if not any(0  in i for i in self.grid):
 			dones = [True,True,True,True]
 
@@ -253,6 +269,17 @@ class GridExplore(GridWorld):
 		else:
 			return False
 
+	def distancePenalty(self, agentlist, distance=2):
+		rewards = np.zeros(len(agentlist))
+		for i in range(len(agentlist)):
+			for j in range(i+1, len(agentlist)):
+				if self.isNear(agentlist[i], agentlist[j], distance):
+					rewards[i] -= 1
+					rewards[j] -= 1
+
+		return rewards
+
+ 
 	def howNear(self, agent1, agent2, distance):
 		return self.distance(agent2, agent1)
 
@@ -331,20 +358,4 @@ class GridExplore(GridWorld):
 				self.viewer = rendering.SimpleImageViewer()
 			self.viewer.imshow(img)
 			return self.viewer.isopen
-
-
-
-CELL_SIZE = 30
-
-PRE_IDS = {
-    'agent': ['3','4','5','6'],
-    'wall': '2',
-    'empty': '0',
-    'visited':'1'
-}
-
-WALL_COLOR = 'black'
-VISITED_COLOR = 'grey'
-AGENT_COLOR = 'green'
-
 
