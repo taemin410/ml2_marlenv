@@ -6,6 +6,7 @@ import numpy as np
 import random
 import torch
 import time
+from PPO import ActorCritic
 
 def gridexplore(args):
         
@@ -19,7 +20,7 @@ def gridexplore(args):
     while not all(done_n):
         
         actions = []
-        # env.render()
+        env.render()
         for i in range(env.n_agents):
             actions.append(env.action_space[i].sample())
         # actions[0] = int(input("move?"))
@@ -34,9 +35,49 @@ def gridexplore(args):
 
     env.close()
 
+def test(args):
+
+    env = gym.make('GridExplore-v0')
+    device = torch.device('cpu')
+    done_n = [False for _ in range(env.n_agents)]
+
+    state_dim = env.observation_space[0].shape[0]
+
+    action_dim = 5
+    n_latent_var = 64           # number of variables in hidden layer
+    model = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
+
+
+    path = r"./PPO_NOTSOLVED_GridExplore-v0.pth"
+        
+    model.load_state_dict(torch.load(path))
+    print(model)
+    state = env.reset()
+
+    while not all(done_n):
+        actions = []
+        env.render()
+        
+        print(state.shape)
+        outputs = model(state)
+
+        a = torch.argmax(outputs, dim=1)
+        actions[0]=a 
+
+        s, r, done_n, _ = env.step(actions)
+
+        totalreward  = totalreward + r 
+        time.sleep(0.05)
+    
+    print("REWARDS: " , totalreward)
+    env.render()
+
+    env.close()
 
 
 
+
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ML2-MULTIAGENT ENVS")
 

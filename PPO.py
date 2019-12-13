@@ -5,6 +5,9 @@ from torch.distributions import Categorical
 import gym
 import envs 
 import numpy as np 
+from torch.utils.tensorboard import SummaryWriter
+import torchvision
+
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -15,13 +18,20 @@ class Memory:
         self.logprobs = []
         self.rewards = []
         self.is_terminals = []
-    
+        
     def clear_memory(self):
         del self.actions[:]
         del self.states[:]
         del self.logprobs[:]
         del self.rewards[:]
         del self.is_terminals[:]
+    
+    def __str__(self):
+        return "{}\n{}\n{}\n{}\n{}".format(self.actions, self.states, self.logprobs, self.rewards, self.is_teminals)
+
+    def randomsample(self, samplesize=16):
+        sample={}
+        sample["actions"] = self.actions[random]
 
 class ActorCritic(nn.Module):
     def __init__(self, state_dim, action_dim, n_latent_var):
@@ -29,7 +39,6 @@ class ActorCritic(nn.Module):
         self.affine = nn.Linear(state_dim, n_latent_var)
 
         # actor
-
         self.action_layer = nn.Sequential(
                 nn.Linear(action_dim, n_latent_var),
                 nn.Tanh(),
@@ -48,8 +57,13 @@ class ActorCritic(nn.Module):
                 nn.Linear(n_latent_var, 1)
                 )
         
-    def forward(self):
-        raise NotImplementedError
+    def forward(self, state):
+        # TODO: forward function to run test
+
+        # state = torch.from_numpy(state).float()
+        
+        # state_value = self.value_layer(state)
+
         
     def act(self, state, memory):
         # print(state)
@@ -89,7 +103,29 @@ class PPO:
         self.policy_old.load_state_dict(self.policy.state_dict())
         
         self.MseLoss = nn.MSELoss()
-        
+
+    def compute_advantage(self, values, batch, batch_mask):
+        batch_size = len(batch)
+
+        v_target = torch.FloatTensor(batch_size)
+        advantages = torch.FloatTensor(batch_size)
+
+        prev_v_target = 0
+        prev_v = 0
+        prev_A = 0
+
+        for i in reversed(range(batch_size)):
+            v_target[i] = batch[i] + GAMMA * prev_v_target * batch_mask[i]
+            delta = batch[i] + GAMMA * prev_v * batch_mask[i] - values.data[i]
+            advantages[i] = delta + GAMMA * TAU * prev_A * batch_mask[i]
+
+            prev_v_target = v_target[i]
+            prev_v = values.data[i]
+            prev_A = advantages[i]
+
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-4)
+        return advantages, v_target
+    
     def update(self, memory):   
         # Monte Carlo estimate of state rewards:
         rewards = []
@@ -99,7 +135,35 @@ class PPO:
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
+
         
+        # TODO: MINI Batch sampling 
+        m_a = memory.actions 
+        m_s = memory.states 
+        m_lp= memory.logprobs 
+        m_r = memory.rewards 
+        m_d = memory.is_terminals 
+        
+        indexes = torch.randperm(len(rewards))
+
+        minibatch = 100 
+
+        for start in range(0, len(rewards), minibatch):
+
+            end = start + minibatch
+            minibatch_idx = indexes[start:end]
+            mini_batch = {}
+            for k , v in 
+            
+
+        print(len(rewards))
+        print(discounted_reward)
+
+
+        # value + reward ->  value estimation 
+        # Episode reduce -> batch -> minibatch 
+        # Timestep , PPO1 AC env parellel action / Sampling in action 
+
         # Normalizing the rewards:
         # print(rewards)
         rewards = torch.tensor(rewards).to(device)
@@ -111,8 +175,14 @@ class PPO:
         old_actions = torch.stack(memory.actions).to(device).detach()
         old_logprobs = torch.stack(memory.logprobs).to(device).detach()
         
+
+
+
         # Optimize policy for K epochs:
         for _ in range(self.K_epochs):
+            
+          
+            
             # Evaluating old actions and values :
             logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
             
@@ -136,19 +206,7 @@ class PPO:
 class ConvNet(nn.Module):
     def __init__(self, n_actions=5):
         super(ConvNet, self).__init__()
-        # self.layer1 = nn.Sequential(
-        #     nn.Conv2d(4, 16, kernel_size=15, stride=1, padding=2),
-        #      nn.BatchNorm2d(16),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=2, stride=2))
-        # # self.layer2 = nn.Sequential(
-        # #     nn.Conv2d(16, 32, kernel_size=5, stride=1, padding=2),
-        # #      nn.BatchNorm2d(32),
-        # #     nn.ReLU(),
-        # #     nn.MaxPool2d(kernel_size=2, stride=2))
-        
-
-
+  
         self.conv1 = nn.Conv2d(4, 32, 3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(32, 64, 3, stride=1, padding=1)
         self.conv3 = nn.Conv2d(64, 64, 3, stride=1, padding=1)
@@ -176,10 +234,7 @@ class ConvNet(nn.Module):
         out = self.fc(out)
         return out
 
-
-
-
-        
+      
 def main():
     ############## Hyperparameters ##############
     env_name = "GridExplore-v0"
@@ -191,9 +246,9 @@ def main():
     model = ConvNet(action_dim).to(device)
 
     render = False
-    solved_reward = 50         # stop training if avg_reward > solved_reward
+    solved_reward = 0         # stop training if avg_reward > solved_reward
     log_interval = 20           # print avg reward in the interval
-    max_episodes = 5000        # max training episodes
+    max_episodes = 20000        # max training episodes
     max_timesteps = 500         # max timesteps in one episode
     n_latent_var = 64           # number of variables in hidden layer
     update_timestep = 2000      # update policy every n timesteps
@@ -217,7 +272,9 @@ def main():
     running_reward = 0
     avg_length = 0
     timestep = 0
-    
+    writer = SummaryWriter("PPO on GridExplore-v0")
+
+
     # training loop
     for i_episode in range(1, max_episodes+1):
         state = env.reset()
@@ -228,10 +285,10 @@ def main():
            # env.render()
 
             state = np.array([state])
-            # print(type(state))
+
             img = torch.from_numpy(state).float().to(device)
-            # print(img.shape)
             outputs = model(img)
+
             # Running policy_old:
             action = ppo.policy_old.act(outputs, memory)
             state, reward, done, _ = env.step([action])
@@ -254,6 +311,12 @@ def main():
                 
         avg_length += t
         
+        writer.add_scalar('step/running_reward', running_reward, timestep)
+        
+        grid = torchvision.utils.make_grid(torch.tensor(env.grid))
+        writer.add_image('images', grid, max_timesteps)
+
+
         # stop training if avg_reward > solved_reward
         if running_reward > (log_interval*solved_reward):
             print("########## Solved! ##########")
@@ -268,10 +331,13 @@ def main():
             print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
             running_reward = 0
             avg_length = 0
-        
+
+    writer.close()
+    torch.save(ppo.policy.state_dict(), './PPO_NOTSOLVED_{}.pth'.format(env_name))
+
 #summary writer - > event add scalar -> stepnum 
 
 if __name__ == '__main__':
     main()
 
-    
+
