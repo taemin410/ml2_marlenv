@@ -3,12 +3,37 @@ from gym.spaces import Discrete, Box
 # from ray import tune
 import time 
 import envs
-from envs.snakegame.graphics import ML2PythonGUI
+# from envs.snakegame.graphics import ML2PythonGUI
 import policy
 import argparse
 import torch 
 import numpy as np
+from stable_baselines.common.policies import MlpPolicy
+from stable_baselines.common.vec_env import SubprocVecEnv
+from stable_baselines import PPO2
 
+def make_env(env_id, rank, seed=0):
+    """
+    Utility function for multiprocessed env.
+
+    :param env_id: (str) the environment ID
+    :param num_env: (int) the number of environments you wish to have in subprocesses
+    :param seed: (int) the inital seed for RNG
+    :param rank: (int) index of the subprocess
+    """
+    def _init():
+        env = gym.make(env_id)
+        env.seed(seed + rank)
+        return env
+
+    return _init
+
+env_id = "GridExplore-v0"
+num_cpu = 2 # Number of processes to use
+# Create the vectorized environment
+env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+
+model= PPO2(MlpPolicy, env, verbose =1 )
 
 # class SimpleCorridor(gym.Env):
 #     def __init__(self, config):
