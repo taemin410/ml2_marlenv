@@ -20,9 +20,11 @@ def gridexplore(args):
     while not all(done_n):
         
         actions = []
-        env.render()
+        env.render_graphic()
         for i in range(env.n_agents):
             actions.append(env.action_space[i].sample())
+    #        print(actions)
+    #        actions[0] = int(input("Move"))
         # actions[0] = int(input("move?"))
         # print(actions)
         s, r, done_n, _ = env.step(actions)
@@ -31,7 +33,7 @@ def gridexplore(args):
         time.sleep(0.05)
     
     print("REWARDS: " , totalreward)
-    env.render()
+    env.render_graphic()
 
     env.close()
 
@@ -81,7 +83,7 @@ def test(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ML2-MULTIAGENT ENVS")
 
-    parser.add_argument("--mode", type=str, default='single')
+    parser.add_argument("--mode", type=str, default='gridexplore')
     parser.add_argument("--seed", type=int, default=100)
 
     args = parser.parse_args()

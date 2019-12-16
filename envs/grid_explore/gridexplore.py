@@ -88,7 +88,7 @@ class Agent:
 
 class GridExplore(GridWorld):
 
-	def __init__(self, size, n_agents=1, full_observable=False, dist_penalty=5):
+	def __init__(self, size, n_agents=4, full_observable=False, dist_penalty=5):
 
 		self.size = size
 		self.grid = [ [0 for _ in range(size)] for _ in range(size)]
