@@ -37,9 +37,9 @@ class Move:
 	STAY = 4 
 
 class Rewards:
-	TIMEPENALTY = -1.0
-	EXPLORATION_BONUS = 1
-
+	TIMEPENALTY = -1
+	EXPLORATION_BONUS = 2
+	WIN = 50 
 
 class Agent:
 
@@ -152,11 +152,11 @@ class GridExplore(GridWorld):
 					new_x,new_y = self.agentList[i].move(v-2, self.grid)
 					pos = (new_x,new_y)
 				else:
-					print("4 action is staying therefore there shouldn't be conflicts")	
+					print("action 4 is staying therefore there shouldn't be conflicts")	
 			
 			self.agent_pos[i] = self.agentList[i].position
 
-			#insert to conflict check nextMoveSet
+			#insert to nextMoveSet to check conflict
 			nextMoveSet.add((pos, self.agentList[i].idx))
 
 		#New position set 
@@ -177,7 +177,7 @@ class GridExplore(GridWorld):
 		# print(rewards)
 		if not any(0  in i for i in self.grid):
 			dones = [True,True,True,True]
-
+			rewards = rewards + Rewards.WIN
 
 		# print(self.time)
 		# if self.time == 1:

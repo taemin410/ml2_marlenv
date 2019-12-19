@@ -6,7 +6,7 @@ import numpy as np
 import random
 import torch
 import time
-from PPO import ActorCritic
+from PPO import Memory, ActorCritic, ConvNet, PPO
 
 def gridexplore(args):
         
@@ -45,36 +45,42 @@ def test(args):
 
     action_dim = 5
     n_latent_var = 64           # number of variables in hidden layer
-    model = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
+    acmodel = ActorCritic(state_dim, action_dim, n_latent_var).to(device)
+    
+    model = ConvNet(action_dim)
+    
+    filename = "PPO_{}.pth".format(env_name)
+    
+    memory = Memory()
+    ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
+    
+    ppo.policy_old.load_state_dict(torch.load(filename))
 
+    acmodel.load_state_dict(torch.load(path))
+    memory = Memory() 
 
-    path = r"./PPO_NOTSOLVED_GridExplore-v0.pth"
-        
-    model.load_state_dict(torch.load(path))
-    print(model)
-    state = env.reset()
+    s = env.reset()
+    totalreward = 0 
 
     while not all(done_n):
         actions = []
         env.render()
         
-        print(state.shape)
+        state=np.array([s])
+        
+        state = torch.from_numpy(state).float()
         outputs = model(state)
 
-        a = torch.argmax(outputs, dim=1)
-        actions[0]=a 
-
-        s, r, done_n, _ = env.step(actions)
+        action = acmodel.act(outputs, memory)
+        state, r, done_n, _ = env.step([action])
 
         totalreward  = totalreward + r 
         time.sleep(0.05)
-    
+
     print("REWARDS: " , totalreward)
     env.render()
 
     env.close()
-
-
 
 
     
