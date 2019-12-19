@@ -95,7 +95,6 @@ class ActorCritic(nn.Module):
     #     state_value = self.value_layer(state) 
         
     #     return action_prob , state_value
-        
     def act(self, state, memory):
         # print(state)
         # state = torch.from_numpy(state).float().to(device) 
