@@ -57,14 +57,7 @@ class ActorCritic(nn.Module):
                 nn.Linear(n_latent_var, 1)
                 )
         
-    def forward(self, state):
-        # TODO: forward function to run test
-
-        # state = torch.from_numpy(state).float()
-        
-        # state_value = self.value_layer(state)
-
-        
+            
     def act(self, state, memory):
         # print(state)
         # state = torch.from_numpy(state).float().to(device) 
@@ -146,15 +139,6 @@ class PPO:
         
         indexes = torch.randperm(len(rewards))
 
-        minibatch = 100 
-
-        for start in range(0, len(rewards), minibatch):
-
-            end = start + minibatch
-            minibatch_idx = indexes[start:end]
-            mini_batch = {}
-            for k , v in 
-            
 
         print(len(rewards))
         print(discounted_reward)
