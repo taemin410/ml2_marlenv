@@ -9,6 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 import torchvision
 from random import random, sample
 from collections import namedtuple
+import time
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -48,17 +49,17 @@ class ActorCritic(nn.Module):
         
         self.enc = ConvNet(action_dim).to(device)
 
-        self.critic = nn.Sequential(
-            nn.Linear(action_dim, n_latent_var),
-            nn.ReLU(),
-            nn.Linear(n_latent_var, 1)
-        )
+        # self.critic = nn.Sequential(
+        #     nn.Linear(action_dim, n_latent_var),
+        #     nn.ReLU(),
+        #     nn.Linear(n_latent_var, 1)
+        # )
         
-        self.actor = nn.Sequential(
-            nn.Linear(state_dim, n_latent_var),
-            nn.ReLU(),
-            nn.Linear(n_latent_var, action_dim),
-        )
+        # self.actor = nn.Sequential(
+        #     nn.Linear(state_dim, n_latent_var),
+        #     nn.ReLU(),
+        #     nn.Linear(n_latent_var, action_dim),
+        # )
 
         # actor
         self.action_layer = nn.Sequential(
@@ -139,8 +140,7 @@ class PPO:
 
     
     def update(self, memory):   
-
-        assert len(memory.states) == 2400 
+        # assert len(memory.states) == 2400 
         shuffleidx = np.random.permutation(len(memory.states))
         mini_batch_size = self.mini_batch_size
 
@@ -154,14 +154,9 @@ class PPO:
             rewards.insert(0, discounted_reward)
             
         memory.advantages = rewards
-
+        
         for _ in range(self.K_epochs):
-            
-            # convert list to tensor
-            old_states = torch.stack(memory.states).to(device).detach()
-            old_actions = torch.stack(memory.actions).to(device).detach()
-            old_logprobs = torch.stack(memory.logprobs).to(device).detach()
-            
+                        
             for i in range(0, len(shuffleidx), mini_batch_size):
                 
                 end = i + mini_batch_size
@@ -171,17 +166,14 @@ class PPO:
                 mb_s = [memory.states[i] for i in idx]
                 mb_a = [memory.actions[i] for i in idx]
                 mb_lp = [memory.logprobs[i] for i in idx]
-
                 mb_adv = [torch.tensor(memory.advantages[i]) for i in idx]
 
                 advs = torch.squeeze(torch.stack(mb_adv).to(device)).detach()
-
                 mb_s = torch.squeeze(torch.stack(mb_s).to(device)).detach()
                 mb_a = torch.squeeze(torch.stack(mb_a).to(device)).detach()
                 mb_lp = torch.squeeze(torch.stack(mb_lp).to(device)).detach()
 
-                rets =  mb_lp + advs
-
+                
                 advantages = torch.tensor(mb_adv).to(device)
                 advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-5)
                 advantages = advantages.flatten().float()
@@ -189,6 +181,9 @@ class PPO:
                 # Evaluating old actions and values :
                 logprobs, values, entropy = self.policy.evaluate(mb_s, mb_a)
                 ent = entropy.mean()
+                
+                returns =  values + advs
+
                 
                 # Finding the ratio (pi_theta / pi_theta__old):
                 ratios = torch.exp(logprobs - mb_lp.detach())
@@ -199,7 +194,8 @@ class PPO:
                 surr1 = ratios * advantages
                 surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages
 
-                loss = -torch.min(surr1, surr2) + 0.5*self.MseLoss(advs , values) - 0.01*ent
+                # loss = -torch.min(surr1, surr2) + 0.5*self.MseLoss(advs , values) - 0.01*ent
+                loss = -torch.min(surr1, surr2) + 0.5*self.MseLoss(returns , values) - 0.01*ent
 
                 # take gradient step
                 self.optimizer.zero_grad()
@@ -243,113 +239,4 @@ class ConvNet(nn.Module):
         out = F.relu(self.linear1(out))
         out = self.fc(out)
         return out
-
-
-def main():
-    ############## Hyperparameters ##############
-    env_name = "GridExplore-v0"
-    # creating environment
-    env = gym.make(env_name)
-    state_dim = env.observation_space[0].shape[0]
-
-    action_dim = 5
-    model = ConvNet(action_dim).to(device)
-
-    render = False
-    solved_reward = 50         # stop training if avg_reward > solved_reward
-    log_interval = 20           # print avg reward in the interval
-    max_episodes = 10000        # max training episodes
-    max_timesteps = 500         # max timesteps in one episode
-    n_latent_var = 64           # number of variables in hidden layer
-    update_timestep = 2400      # update policy every n timesteps
-    lr = 0.001
-    betas = (0.9, 0.999)
-    gamma = 0.99                # discount factor
-    K_epochs = 2                # update policy for K epochs
-    eps_clip = 0.2              # clip parameter for PPO
-    random_seed = None
-    mini_batch_size = 32
-    #############################################
-    
-    if random_seed:
-        torch.manual_seed(random_seed)
-        env.seed(random_seed)
-    
-    memory = Memory()
-    ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
-    print(lr,betas)
-
-    buffer = {key:value for key,value in memory.__dict__.items() if not key.startswith('__') and not callable(key)}
-
-    
-    # logging variables
-    running_reward = 0
-    avg_length = 0
-    timestep = 0
-    writer = SummaryWriter("logs")
-
-
-    # training loop
-    for i_episode in range(1, max_episodes+1):
-        state = env.reset()
-        
-        # print("length of state arr is : " ,type(state))
-        for t in range(max_timesteps):
-            timestep += 1
-           # env.render()
-
-            state = np.array([state])
-
-            outputs = torch.from_numpy(state).float().to(device)
-
-            # Running policy_old:
-            action = ppo.policy_old.act(outputs, memory)
-            state, reward, done, _ = env.step([action])
-
-            # Saving reward and is_terminal:
-            memory.rewards.append(reward)
-            memory.dones.append(done[0])
-            
-            # update if its time
-            if timestep % update_timestep == 0:
-                ppo.update(memory)
-                memory.clear_memory()
-                timestep = 0
-            
-            running_reward += reward[0]
-            if render:
-                env.render()
-            if all(done):
-                break
-                
-        avg_length += t
-        
-        writer.add_scalar('step/running_reward', running_reward, timestep)
-        
-        grid = torchvision.utils.make_grid(torch.tensor(env.grid))
-        writer.add_image('images', grid, max_timesteps)
-
-
-        # stop training if avg_reward > solved_reward
-        if running_reward > (log_interval*solved_reward):
-            print("########## Solved! ##########")
-            torch.save(ppo.policy.state_dict(), './PPO_{}.pth'.format(env_name))
-            break
-            
-        # logging
-        if i_episode % log_interval == 0:
-            avg_length = int(avg_length/log_interval)
-            running_reward = int((running_reward/log_interval))
-            
-            print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
-            running_reward = 0
-            avg_length = 0
-
-    writer.close()
-    torch.save(ppo.policy.state_dict(), './PPO_NOTSOLVED_{}.pth'.format(env_name))
-
-
-if __name__ == '__main__':
-    main()
-
 
