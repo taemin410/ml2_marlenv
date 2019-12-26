@@ -8,32 +8,32 @@ import policy
 import argparse
 import torch 
 import numpy as np
-from stable_baselines.common.policies import MlpPolicy
-from stable_baselines.common.vec_env import SubprocVecEnv
-from stable_baselines import PPO2
+# from stable_baselines.common.policies import MlpPolicy
+# from stable_baselines.common.vec_env import SubprocVecEnv
+# from stable_baselines import PPO2
 
-def make_env(env_id, rank, seed=0):
-    """
-    Utility function for multiprocessed env.
+# def make_env(env_id, rank, seed=0):
+#     """
+#     Utility function for multiprocessed env.
 
-    :param env_id: (str) the environment ID
-    :param num_env: (int) the number of environments you wish to have in subprocesses
-    :param seed: (int) the inital seed for RNG
-    :param rank: (int) index of the subprocess
-    """
-    def _init():
-        env = gym.make(env_id)
-        env.seed(seed + rank)
-        return env
+#     :param env_id: (str) the environment ID
+#     :param num_env: (int) the number of environments you wish to have in subprocesses
+#     :param seed: (int) the inital seed for RNG
+#     :param rank: (int) index of the subprocess
+#     """
+#     def _init():
+#         env = gym.make(env_id)
+#         env.seed(seed + rank)
+#         return env
 
-    return _init
+#     return _init
 
-env_id = "GridExplore-v0"
-num_cpu = 2 # Number of processes to use
-# Create the vectorized environment
-env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
+# env_id = "GridExplore-v0"
+# num_cpu = 2 # Number of processes to use
+# # Create the vectorized environment
+# env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
 
-model= PPO2(MlpPolicy, env, verbose =1 )
+# model= PPO2(MlpPolicy, env, verbose =1 )
 
 # class SimpleCorridor(gym.Env):
 #     def __init__(self, config):
@@ -93,38 +93,29 @@ model= PPO2(MlpPolicy, env, verbose =1 )
 # human_1p(args)
 
 
-# env = gym.make('GridExplore-v0')
+env = gym.make('GridExplore-v0')
 
 
-# env.reset()
-# done_n = [False for _ in range(env.n_agents)]
-# env.action_space[0].np_random.seed(123)
+env.reset()
+done_n = [False for _ in range(env.n_agents)]
+env.action_space[0].np_random.seed(123)
 
-# while not all(done_n):
+while not all(done_n):
     
-#     actions = []
-#     env.render()
-#     for i in range(env.n_agents):
-#         actions.append(env.action_space[i].sample())
-#     # actions[0] = int(input("move?"))
-#     # print(actions)
-#     s, r, done_n, _ = env.step(actions)
+    actions = []
+    env.render()
+    for i in range(env.n_agents):
+        actions.append(env.action_space[i].sample())
+    s, r, done_n, _ = env.step(actions)
+    print("REWARDS: " , r)
 
     
-#     time.sleep(0.05)
+    time.sleep(0.05)
 
 # print("REWARDS: " , r)
-# env.render()
+env.render()
 
-# env.close()
-
-# actions = [3,2,1,3]
-
-
-# a.step(actions)
-
-
-# a.render()
+env.close()
 
 
 # print( a.isNear(a.agentList[0], a.agentList[2],5 ))

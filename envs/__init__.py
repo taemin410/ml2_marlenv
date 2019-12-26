@@ -10,7 +10,16 @@ register(
 	entry_point='envs.grid_explore:GridExplore',
 	kwargs={
 		'full_observable' : False,
-		'size' : 15
+		'size' : 8
 	}
 )
 
+
+register(
+	id='GridPath-v0',
+	entry_point='envs.grid_explore:GridPath',
+	kwargs={
+		'full_observable' : False,
+		'size' : 11
+	}
+)

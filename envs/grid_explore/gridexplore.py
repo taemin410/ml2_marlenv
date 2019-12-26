@@ -34,12 +34,13 @@ class Move:
 	RIGHT = 1
 	DOWN = 2
 	LEFT = 3
+	STAY = 3 
 	STAY = 4 
 
 class Rewards:
-	TIMEPENALTY = -1.0
-	EXPLORATION_BONUS = 1
-	WIN = 100
+	TIMEPENALTY = -1
+	EXPLORATION_BONUS = 2
+	WIN = 50 
 
 class Agent:
 
@@ -88,7 +89,7 @@ class Agent:
 
 class GridExplore(GridWorld):
 
-	def __init__(self, size, n_agents=4, full_observable=False, dist_penalty=5):
+	def __init__(self, size, n_agents=1, full_observable=False, dist_penalty=5):
 
 		self.size = size
 		self.grid = [ [0 for _ in range(size)] for _ in range(size)]
@@ -223,9 +224,6 @@ class GridExplore(GridWorld):
 		assert self.grid[y][x] == 0 or self.grid[y][x] == 1
 		self.grid[y][x] = agentnum
 
-
-
-
 	def getObservation(self, agent, obs_size):
 		(agentx , agenty) = agent.position
 		h , w = obs_size, obs_size 
@@ -306,8 +304,8 @@ class GridExplore(GridWorld):
 
 			agents = np.isin(self.grid, Cell.AGENTS ).astype(np.float32)	
 			agenti = np.isin(self.grid, i.idx ).astype(np.float32)			
-
 			visited = np.isin(self.grid, Cell.VISITED).astype(np.float32) 
+
 			#add agent's position as visited
 			visited = visited + agents
 			wall = np.isin(self.grid, Cell.WALL).astype(np.float32)
