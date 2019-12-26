@@ -34,7 +34,7 @@ class Move:
 	RIGHT = 1
 	DOWN = 2
 	LEFT = 3
-	STAY = 4 
+	STAY = 3 
 
 class Rewards:
 	TIMEPENALTY = -1
@@ -138,12 +138,14 @@ class GridExplore(GridWorld):
 			actiondict[i] = actions[i]
 
 		nextMoveSet=set()
+		nextPosSet=set()
+
 		for i, v in actiondict.items():
 			self.agent_prev_pos[i] = self.agentList[i].position
 			new_x, new_y = self.agentList[i].move(v, self.grid)
 
 			pos = (new_x,new_y)
-			if pos in nextMoveSet:
+			if pos in nextPosSet:
 				print("conflict?")
 				if v < 2 :
 					new_x,new_y = self.agentList[i].move(v+2, self.grid)
@@ -157,6 +159,7 @@ class GridExplore(GridWorld):
 			self.agent_pos[i] = self.agentList[i].position
 
 			#insert to nextMoveSet to check conflict
+			nextPosSet.add(pos)
 			nextMoveSet.add((pos, self.agentList[i].idx))
 
 		#New position set 

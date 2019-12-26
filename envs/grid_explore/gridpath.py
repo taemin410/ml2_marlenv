@@ -149,7 +149,12 @@ class GridPath(GridWorld):
 
 		
 	def step(self, actions):
-		return actions
+            assert len(actions) == len(self.n_agents)
+
+            print(actions)
+
+            
+            return actions
 
 
 

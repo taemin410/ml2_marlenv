@@ -67,7 +67,7 @@ def test(args):
     #############################################
 
     
-    filename = "PPO_NOTSOLVED_GridExplore-v0.pth"
+    filename = str(input("filename: "))
     
     memory = Memory()
     ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
@@ -230,7 +230,7 @@ def mptrain(args):
     render = False
     solved_reward = 200         # stop training if avg_reward > solved_reward
     log_interval = 20           # print avg reward in the interval
-    max_episodes = 2400        # max training episodes
+    max_episodes = 200        # max training episodes
     max_timesteps = 500         # max timesteps in one episode
     n_latent_var = 128           # number of variables in hidden layer
     update_timestep = 600      # update policy every n timesteps
@@ -240,7 +240,7 @@ def mptrain(args):
     K_epochs = 2                # update policy for K epochs
     eps_clip = 0.2              # clip parameter for PPO
     random_seed = None
-    mini_batch_size = 16
+    mini_batch_size = 4
     #############################################
     
     if random_seed:
