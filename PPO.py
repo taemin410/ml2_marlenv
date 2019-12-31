@@ -152,9 +152,9 @@ class PPO:
                 discounted_reward = 0
             discounted_reward = reward + (self.gamma * discounted_reward)
             rewards.insert(0, discounted_reward)
-            
-        memory.advantages = rewards
         
+        memory.advantages = rewards
+
         for _ in range(self.K_epochs):
                         
             for i in range(0, len(shuffleidx), mini_batch_size):
@@ -229,7 +229,7 @@ class ConvNet(nn.Module):
             # nn.MaxPool2d(kernel_size=2, stride=2),
         )
         #64 *3 * 3
-        self.linear1 = nn.Linear(256, 512)
+        self.linear1 = nn.Linear(576, 512)
 
         self.fc = nn.Linear(512, n_actions)
         

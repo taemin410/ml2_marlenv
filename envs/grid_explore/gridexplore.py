@@ -148,7 +148,6 @@ class GridExplore(GridWorld):
 
 			pos = (new_x,new_y)
 			if pos in nextPosSet:
-				print("conflict?")
 				if v < 2 :
 					new_x,new_y = self.agentList[i].move(v+2, self.grid)
 					pos = (new_x,new_y)
@@ -174,7 +173,6 @@ class GridExplore(GridWorld):
 		
 		#TIME PENALTY + EXPLORATION REWARD
 		for i in range(self.n_agents):
-
 
 			rewards[i] += (self.searchArea(self.agentList[i]) + Rewards.TIMEPENALTY)
 
@@ -297,8 +295,10 @@ class GridExplore(GridWorld):
 
 	def observation(self):
 
-		statearray= np.zeros(self.observation_space[0].shape) 
+		statearray= []
+		# print(self.observation_space) 
 		for i in self.agentList:
+			
 
 			state = np.zeros(self.observation_space[0].shape)
 
@@ -319,8 +319,8 @@ class GridExplore(GridWorld):
 				state[2] = visited
 				state[3] = wall
 
-				statearray = state
-		
+			statearray.append(state)
+
 		return statearray
     
 
