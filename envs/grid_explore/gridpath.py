@@ -16,12 +16,12 @@ PRE_IDS = {
     'agent': ['3','4','5','6'],
     'wall': '2',
     'empty': '0',
-    'visited':'1'
+    'destinations':'1'
 }
 
 WALL_COLOR = 'black'
-VISITED_COLOR = 'grey'
-AGENT_COLOR = 'green'
+DESTINATION_COLOR = 'grey'
+AGENT_COLOR = ['green', 'blue', 'red', 'yellow']
 
 class Cell:
     UNVISITED = 0
@@ -40,6 +40,7 @@ class Rewards:
 	TIMEPENALTY = -0.1
 	EXPLORATION_BONUS = 1
 	WIN = 100 
+	CONFLICTPENALTY = -0.5
 
 class Agent:
 
@@ -129,10 +130,14 @@ class GridPath(GridWorld):
 	def __setDestination(self):
 		self.grid[1][1] = self.grid[1][self.size-2] = 1
 		self.grid[2][1] = self.grid[2][self.size-2] = 1
+		self.destinations = [(1,1), (1, self.size-2), (2,1), (2,self.size-2)]
 
 	#set starting position for 4 players
 	def __setStartingPosition(self):
 		assert self.n_agents == 4
+		
+		self.starting_positions = [(1, self.size-2), (1, self.size-3), (self.size-2, self.size-2), (self.size-2, self.size-3)]
+
 		self.grid[self.size-2][1] = 3
 		self.grid[self.size-3][1] = 4
 		self.grid[self.size-2][self.size-2] = 5
@@ -144,67 +149,83 @@ class GridPath(GridWorld):
 		d = Agent(self.size-2, self.size-3, 6)
 		self.agentList.extend([a,b,c,d])
 
-	
+		for index, value in enumerate(Cell.AGENTS):
+			self.init_agent_pos[index] =  self.starting_positions[index][1], self.starting_positions[index][0]
+
+
 
 	def reset(self):
+
 		self.grid = [ [Cell.WALL for _ in range(self.size)] for _ in range(self.size)]
 		self.__setpath()
 		self.__setDestination()
 		self.__setStartingPosition()
+		self.__init_full_obs()
 
 		self.dones = np.zeros(self.n_agents, dtype=bool)
-
 		
 	def step(self, actions):
-
 		assert len(actions) == self.n_agents
 
-		
 		prevloc = [i.position for i in self.agentList]
 		nextloc = []
-		# print(prevloc)
+		rewards=np.zeros(4)
+		self.penalty = np.zeros(self.n_agents, dtype=float)
 
 		actiondict = {}
 		for i in range(len(actions)):
-			actiondict[i] = actions[i]
-			newx, newy = self.agentList[i].move(actions[i], self.grid)
-			nextloc.append((newx,newy))
+			if not self.dones[i]:
 
-		# print(nextloc)
-		while self.resolveConflict(nextloc, prevloc):
-			# print(nextloc)	            
-			abd = 1 
-			# return [True for a in range(self.n_agents)]
-			break
+				actiondict[i] = actions[i]
+				newx, newy = self.agentList[i].move(actions[i], self.grid)
+				nextloc.append((newx,newy))
+			else:
+				nextloc.append(prevloc[i])
+
+		conflict = True
+		while conflict:
+			conflict = self.resolveConflict(nextloc, prevloc)
+			
 
 		for index, value in enumerate(nextloc):
 			self.grid[value[1]][value[0]]=Cell.AGENTS[index]
-
+			self.agent_pos[index] = value[1], value[0]
+		
+			if (value[1], value[0]) in self.destinations:
 				
+				if not self.dones[index]:
+
+					rewards[index]+= Rewards.WIN
+					self.dones[index]= True
+
+				# self.grid[value[1]][value[0]] = 2 
+			
+			elif not self.dones[index] :
+				rewards[index] += Rewards.TIMEPENALTY
+
+		rewards += self.penalty
 		states=[]
-		dones=[]
-		rewards=[]
 		infos={}
 
-		if 1 not in self.grid:
-			dones= [True for a in range(self.n_agents)]
+		# if 1 not in self.grid:
+		# 	dones= [True for a in range(self.n_agents)]
 
 
-		return states, dones, rewards, infos
+		return states, rewards, self.dones, infos
 
 
 	def resolveConflict(self, nextloc, prevloc):
         
 		conflict = self.__checkMove(nextloc)
 
-
 		if conflict:
 			for i in conflict:
 				for agent in i[1]:
 					prevx, prevy = prevloc[agent]
+					self.penalty[agent] +=Rewards.CONFLICTPENALTY
 					self.agentList[agent].makeMove(prevx,prevy)
 					nextloc[agent] = (prevx, prevy)
-				print(nextloc)
+				# print(nextloc)
 			return True
 		
 		return False 
@@ -238,9 +259,8 @@ class GridPath(GridWorld):
 			agents = np.isin(self.grid, Cell.AGENTS ).astype(np.float32)	
 			agenti = np.isin(self.grid, i.idx ).astype(np.float32)			
 
-			visited = np.isin(self.grid, Cell.VISITED).astype(np.float32) 
-			#add agent's position as visited
-			visited = visited + agents
+			destinations = np.isin(self.grid, Cell.DESTINATIONS).astype(np.float32) 
+
 			wall = np.isin(self.grid, Cell.WALL).astype(np.float32)
 
 			#exclude self from agents pos list
@@ -249,9 +269,63 @@ class GridPath(GridWorld):
 			for idx in range(self.n_agents):
 				state[0] = agenti
 				state[1] = agents
-				state[2] = visited
+				state[2] = destinations
 				state[3] = wall
 
 				statearray = state
 		
 		return statearray
+
+
+
+
+
+
+
+	def __init_full_obs(self):
+	    self.agent_pos = copy.copy(self.init_agent_pos)
+	    self.agent_prev_pos = copy.copy(self.init_agent_pos)
+	    self._full_obs = self.grid
+	    self.__draw_base_img()
+
+
+
+	def __draw_base_img(self):
+		# print(self.init_agent_pos)
+		self._base_img = draw_grid(self._grid_shape[0], self._grid_shape[1], cell_size=CELL_SIZE, fill='white')
+		for row in range(self._grid_shape[0]):
+			for col in range(self._grid_shape[1]):
+				if 2 == self.grid[col][row]:
+					fill_cell(self._base_img, (col, row), cell_size=CELL_SIZE, fill=WALL_COLOR, margin=0.05)
+				elif PRE_IDS['destinations'] is self.grid[col][row]:
+					fill_cell(self._base_img, (col, row), cell_size=CELL_SIZE, fill=DESTINATION_COLOR, margin=0.05)
+				elif PRE_IDS['agent'] is self.grid[col][row]:
+					fill_cell(self._base_img, (col, row), cell_size=CELL_SIZE, fill=AGENT_COLOR[0], margin=0.05)
+
+
+	def render_graphic(self, mode='human'):
+		img = copy.copy(self._base_img)
+
+		#Draw Agents with Color and number 
+		for agent_i in range(self.n_agents):
+			draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=AGENT_COLOR[agent_i])
+			write_cell_text(img, text=str(agent_i + 3), pos=self.agent_pos[agent_i], cell_size=CELL_SIZE,
+							fill='white', margin=0.4)
+
+		#Draw explored/visited cells 
+		for row in range(self._grid_shape[0]):
+			for col in range(self._grid_shape[1]):
+				if self.grid[col][row] == 1:
+					fill_cell(self._base_img, (col, row), cell_size=CELL_SIZE, fill=DESTINATION_COLOR, margin=0.05)
+
+
+		img = np.asarray(img)
+		if mode == 'rgb_array':
+			return img
+		elif mode == 'human':
+			from gym.envs.classic_control import rendering
+			if self.viewer is None:
+				self.viewer = rendering.SimpleImageViewer()
+			self.viewer.imshow(img)
+			return self.viewer.isopen
+

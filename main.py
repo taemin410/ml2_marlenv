@@ -29,9 +29,45 @@ class queue():
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+def gridpath(args):
+        
+    env = gym.make('GridPath-v0')
+
+    env.reset()
+    done_n = [False for _ in range(env.n_agents)]
+    env.action_space[0].np_random.seed(123)
+    totalreward = np.zeros(4)
+
+    while not all(done_n):
+        
+        actions = []
+        if args.render:  
+            env.render_graphic()
+        env.render()
+
+        for i in range(env.n_agents):
+            actions.append(env.action_space[i].sample())
+    #        print(actions)
+    #        actions[0] = int(input("Move"))
+        # actions[0] = int(input("move?"))
+        # print(actions)
+        s, r, done_n, _ = env.step(actions)
+        print(r)
+        # totalreward  = totalreward + r 
+        time.sleep(0.05)
+    
+    print("REWARDS: " , totalreward)
+    if args.render:  
+        env.render_graphic()
+
+    env.render()
+
+    env.close()
+
+
 def gridexplore(args):
         
-    env = gym.make('GridExplore-v0')
+    env = gym.make('GridExplore-v1')
 
     env.reset()
     done_n = [False for _ in range(env.n_agents)]

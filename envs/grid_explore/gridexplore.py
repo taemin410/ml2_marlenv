@@ -56,7 +56,9 @@ class Agent:
 	def __str__(self):
 		return "x: " + str(self.x) +  " y: "+ str(self.y)+ " agent idx: " + str(self.idx)
 
-			
+	def position_yx(self):
+		return self.y, self.x
+
 	def move(self, MOVE, grid):
 		new_x, new_y = self.position[0], self.position[1]
 		org_x, org_y = self.position[0], self.position[1]
@@ -143,7 +145,7 @@ class GridExplore(GridWorld):
 		nextPosSet=set()
 
 		for i, v in actiondict.items():
-			self.agent_prev_pos[i] = self.agentList[i].position
+			# self.agent_prev_pos[i] = self.agentList[i].position
 			new_x, new_y = self.agentList[i].move(v, self.grid)
 
 			pos = (new_x,new_y)
@@ -157,7 +159,7 @@ class GridExplore(GridWorld):
 				else:
 					print("action 4 is staying therefore there shouldn't be conflicts")	
 			
-			self.agent_pos[i] = self.agentList[i].position
+			self.agent_pos[i] = self.agentList[i].position_yx()
 
 			#insert to nextMoveSet to check conflict
 			nextPosSet.add(pos)
@@ -326,7 +328,7 @@ class GridExplore(GridWorld):
 
 	def __init_full_obs(self):
 	    self.agent_pos = copy.copy(self.init_agent_pos)
-	    self.agent_prev_pos = copy.copy(self.init_agent_pos)
+	    # self.agent_prev_pos = copy.copy(self.init_agent_pos)
 	    self._full_obs = self.grid
 	    self.__draw_base_img()
 
@@ -336,11 +338,11 @@ class GridExplore(GridWorld):
 		for row in range(self._grid_shape[0]):
 			for col in range(self._grid_shape[1]):
 				if 2 == self.grid[col][row]:
-					fill_cell(self._base_img, (row, col), cell_size=CELL_SIZE, fill=WALL_COLOR, margin=0.05)
+					fill_cell(self._base_img, (col, row), cell_size=CELL_SIZE, fill=WALL_COLOR, margin=0.05)
 				elif PRE_IDS['visited'] is self.grid[row][col]:
-					fill_cell(self._base_img, (row, col), cell_size=CELL_SIZE, fill=VISITED_COLOR, margin=0.05)
+					fill_cell(self._base_img, (col, row), cell_size=CELL_SIZE, fill=VISITED_COLOR, margin=0.05)
 				elif PRE_IDS['agent'] is self.grid[row][col]:
-					fill_cell(self._base_img, (row, col), cell_size=CELL_SIZE, fill=AGENT_COLOR, margin=0.05)
+					fill_cell(self._base_img, (col, row), cell_size=CELL_SIZE, fill=AGENT_COLOR, margin=0.05)
 
 
 
@@ -356,7 +358,7 @@ class GridExplore(GridWorld):
 		#Draw explored/visited cells 
 		for row in range(self._grid_shape[0]):
 			for col in range(self._grid_shape[1]):
-				if self.grid[col][row] == 1:
+				if self.grid[row][col] == 1:
 					fill_cell(self._base_img, (row, col), cell_size=CELL_SIZE, fill=VISITED_COLOR, margin=0.05)
 
 
