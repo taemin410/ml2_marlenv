@@ -70,9 +70,10 @@ class Agent:
 			new_x += 1 	
 
 		#check if wall exist there
-		if grid[new_y][new_x] != 2 and grid[new_y][new_x] not in Cell.AGENTS:
+		if grid[new_y][new_x] != 2 :
+			# and grid[new_y][new_x] not in Cell.AGENTS:
 			self.makeMove(new_x, new_y)
-			# grid[org_y][org_x] = 1
+			grid[org_y][org_x] = 0
 			return new_x, new_y
 		else:
 			return self.position[0], self.position[1]
@@ -89,17 +90,17 @@ class GridPath(GridWorld):
 
 		self.size = size
 		#initialize with WALL
-		self.grid = [ [Cell.WALL for _ in range(size)] for _ in range(size)]
-		self._grid_shape=[size,size]
+		self.grid = [ [Cell.WALL for _ in range(self.size)] for _ in range(self.size)]
+		self._grid_shape=[self.size,self.size]
 
 		self.agentList=[]
 		self.time= 0
 		self.n_agents=n_agents
 		self.dist_penalty = dist_penalty 
 
-		self.__setpath()
-		self.__setDestination()
-		self.__setStartingPosition()
+		# self.__setpath()
+		# self.__setDestination()
+		# self.__setStartingPosition()
 
 		self.init_agent_pos= {}
 		self.viewer = None
@@ -137,10 +138,16 @@ class GridPath(GridWorld):
 		self.grid[self.size-2][self.size-2] = 5
 		self.grid[self.size-3][self.size-2] = 6
 
+		a = Agent(1, self.size-2, 3)
+		b = Agent(1, self.size-3, 4)
+		c = Agent(self.size-2, self.size-2, 5)
+		d = Agent(self.size-2, self.size-3, 6)
+		self.agentList.extend([a,b,c,d])
+
 	
 
 	def reset(self):
-		self.grid = [ [Cell.WALL for _ in range(size)] for _ in range(size)]
+		self.grid = [ [Cell.WALL for _ in range(self.size)] for _ in range(self.size)]
 		self.__setpath()
 		self.__setDestination()
 		self.__setStartingPosition()
@@ -149,12 +156,74 @@ class GridPath(GridWorld):
 
 		
 	def step(self, actions):
-            assert len(actions) == len(self.n_agents)
 
-            print(actions)
+		assert len(actions) == self.n_agents
 
-            
-            return actions
+		
+		prevloc = [i.position for i in self.agentList]
+		nextloc = []
+		# print(prevloc)
+
+		actiondict = {}
+		for i in range(len(actions)):
+			actiondict[i] = actions[i]
+			newx, newy = self.agentList[i].move(actions[i], self.grid)
+			nextloc.append((newx,newy))
+
+		# print(nextloc)
+		while self.resolveConflict(nextloc, prevloc):
+			# print(nextloc)	            
+			abd = 1 
+			# return [True for a in range(self.n_agents)]
+			break
+
+		for index, value in enumerate(nextloc):
+			self.grid[value[1]][value[0]]=Cell.AGENTS[index]
+
+				
+		states=[]
+		dones=[]
+		rewards=[]
+		infos={}
+
+		if 1 not in self.grid:
+			dones= [True for a in range(self.n_agents)]
+
+
+		return states, dones, rewards, infos
+
+
+	def resolveConflict(self, nextloc, prevloc):
+        
+		conflict = self.__checkMove(nextloc)
+
+
+		if conflict:
+			for i in conflict:
+				for agent in i[1]:
+					prevx, prevy = prevloc[agent]
+					self.agentList[agent].makeMove(prevx,prevy)
+					nextloc[agent] = (prevx, prevy)
+				print(nextloc)
+			return True
+		
+		return False 
+
+	def __checkMove(self, poslist):
+		
+		counter = 0
+		movedict = {}
+
+		for i, v in enumerate(poslist):
+
+			if v not in movedict:
+				movedict[v] = [i]
+			else:
+				movedict[v].append(i)
+
+		# print(movedict)
+		
+		return [ (i,v) for i, v in movedict.items() if len(v) > 1] 
 
 
 

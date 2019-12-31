@@ -73,7 +73,7 @@ def test(args):
     action_dim = 5
     
 
-    render = False
+    render = args.render
     max_timesteps = 500
     n_latent_var = 512           # number of variables in hidden layer
     lr = 0.001
@@ -90,7 +90,7 @@ def test(args):
     ppo = PPO(state_dim, action_dim, n_latent_var, lr, betas, gamma, K_epochs, eps_clip)
     
     print(ppo.policy_old.state_dict)
-    ppo.policy_old.load_state_dict(torch.load(filename))
+    ppo.policy_old.load_state_dict(torch.load(filename, map_location=torch.device('cpu')))
     
     avg=0
     for i in range(10):
@@ -105,7 +105,8 @@ def test(args):
 
             actions = []
             env.render()
-            
+            if render:
+                env.render_graphic()        
             state=np.array([s])
             
             state = torch.from_numpy(state).float().to(device)
@@ -121,6 +122,9 @@ def test(args):
         print("REWARDS: " , totalreward)
         avg += totalreward
     
+    if render:
+        env.render_graphic()        
+
     env.render()
 
     env.close()
