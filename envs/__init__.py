@@ -14,6 +14,15 @@ register(
 	}
 )
 
+register(
+	id='GridExplore-v1',
+	entry_point='envs.grid_explore:GridExplore',
+	kwargs={
+		'full_observable' : False,
+		'size' : 15,
+		'n_agents' : 4
+	}
+)
 
 register(
 	id='GridPath-v0',

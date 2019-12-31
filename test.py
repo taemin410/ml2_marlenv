@@ -93,13 +93,13 @@ import numpy as np
 # human_1p(args)
 
 
-env = gym.make('GridExplore-v0')
+env = gym.make('GridExplore-v1')
 
 
 env.reset()
 done_n = [False for _ in range(env.n_agents)]
 env.action_space[0].np_random.seed(123)
-
+totalr= [0 for _ in range(env.n_agents)] 
 while not all(done_n):
     
     actions = []
@@ -108,11 +108,11 @@ while not all(done_n):
         actions.append(env.action_space[i].sample())
     s, r, done_n, _ = env.step(actions)
     print("REWARDS: " , r)
-
+    totalr += r
     
     time.sleep(0.05)
 
-# print("REWARDS: " , r)
+print("TOTAL REWARDS: " , totalr)
 env.render()
 
 env.close()
