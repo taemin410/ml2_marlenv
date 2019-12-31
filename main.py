@@ -14,6 +14,18 @@ from torch.utils.tensorboard import SummaryWriter
 import torchvision
 from collections import namedtuple
 
+class queue():
+    def __init__(self, size=20):
+        self.mem = []
+        self.size = size 
+
+    def push(self, item):
+        self.mem.append(item)
+        if len(self.mem) > self.size:
+            self.mem.pop(0)
+            assert len(self.mem) == self.size 
+
+        return sum(self.mem) / len(self.mem) 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -29,7 +41,9 @@ def gridexplore(args):
     while not all(done_n):
         
         actions = []
-        env.render_graphic()
+        if args.render:  
+            env.render_graphic()
+        env.render()
         for i in range(env.n_agents):
             actions.append(env.action_space[i].sample())
     #        print(actions)
@@ -42,7 +56,10 @@ def gridexplore(args):
         time.sleep(0.05)
     
     print("REWARDS: " , totalreward)
-    env.render_graphic()
+    if args.render:  
+        env.render_graphic()
+
+    env.render()
 
     env.close()
 
@@ -58,7 +75,7 @@ def test(args):
 
     render = False
     max_timesteps = 500
-    n_latent_var = 128           # number of variables in hidden layer
+    n_latent_var = 512           # number of variables in hidden layer
     lr = 0.001
     betas = (0.9, 0.999)
     gamma = 0.99                # discount factor
@@ -127,7 +144,7 @@ def train(args):
     max_timesteps = 500         # max timesteps in one episode
     n_latent_var = 64           # number of variables in hidden layer
     update_timestep = 2400      # update policy every n timesteps
-    lr = 0.001
+    lr = 0.0001
     betas = (0.9, 0.999)
     gamma = 0.99                # discount factor
     K_epochs = 2                # update policy for K epochs
@@ -154,6 +171,7 @@ def train(args):
     writer = SummaryWriter("logs")
 
     memory = Memory()
+    q = queue(20)
 
     # training loop
     for i_episode in range(1, max_episodes+1):
@@ -187,10 +205,11 @@ def train(args):
                 env.render()
             if all(done):
                 break
-                
+        
+        avg = q.push(running_reward)
         avg_length += t
         
-        writer.add_scalar('i_episode/running_reward', running_reward, i_episode)
+        writer.add_scalar('i_episode/avg_reward', avg , i_episode)
         
         grid = torchvision.utils.make_grid(torch.tensor(env.grid))
         writer.add_image('images', grid, max_timesteps)
@@ -230,17 +249,17 @@ def mptrain(args):
     render = False
     solved_reward = 200         # stop training if avg_reward > solved_reward
     log_interval = 20           # print avg reward in the interval
-    max_episodes = 200        # max training episodes
+    max_episodes = 500        # max training episodes
     max_timesteps = 500         # max timesteps in one episode
     n_latent_var = 128           # number of variables in hidden layer
     update_timestep = 600      # update policy every n timesteps
-    lr = 0.001
+    lr = 1e-4
     betas = (0.9, 0.999)
     gamma = 0.99                # discount factor
-    K_epochs = 2                # update policy for K epochs
+    K_epochs = 4                # update policy for K epochs
     eps_clip = 0.2              # clip parameter for PPO
     random_seed = None
-    mini_batch_size = 4
+    mini_batch_size = 32
     #############################################
     
     if random_seed:
@@ -265,6 +284,7 @@ def mptrain(args):
     avg_length = 0
     timestep = 0
     writer = SummaryWriter("logs/" + time.strftime("%Y%m%d-%H%M%S"))
+    q = queue()
 
     # training loop
     for i_episode in range(1, max_episodes+1):
@@ -290,6 +310,7 @@ def mptrain(args):
                 
                 if done:
                     states[k] = multi_envs[k].reset()
+                    avg = q.push(running_reward)
 
             # update if its time
             if timestep % update_timestep == 0:
@@ -311,11 +332,11 @@ def mptrain(args):
         avg_length += t 
         
         running_reward /= num_processes
+        avg = q.push(running_reward)
 
-        writer.add_scalar('episode/running_reward', running_reward, i_episode)
         
-        grid = torchvision.utils.make_grid(torch.tensor(env.grid))
-        writer.add_image('images', grid, max_timesteps)
+        # grid = torchvision.utils.make_grid(torch.tensor(env.grid))
+        # writer.add_image('images', grid, max_timesteps)
 
         
         
@@ -330,7 +351,8 @@ def mptrain(args):
         if i_episode % log_interval == 0:
             avg_length = int(avg_length/log_interval)
             running_reward = int((running_reward/log_interval))
-            
+            writer.add_scalar('episode/average_reward', avg, i_episode)
+
             print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
             running_reward = 0
             avg_length = 0
@@ -346,6 +368,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--mode", type=str, default='gridexplore')
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument('--render', dest='render', action='store_true')
 
     args = parser.parse_args()
 
