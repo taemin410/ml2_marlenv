@@ -10,7 +10,7 @@ register(
 	entry_point='envs.grid_explore:GridExplore',
 	kwargs={
 		'full_observable' : False,
-		'size' : 8
+		'size' : 10
 	}
 )
 

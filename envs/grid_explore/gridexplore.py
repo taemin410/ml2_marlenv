@@ -3,6 +3,7 @@ import random
 from ..utils.action_space import MultiAgentActionSpace
 from ..utils.observation_space import MultiAgentObservationSpace
 from ..utils.draw import draw_grid, fill_cell, draw_circle, write_cell_text
+from gym.envs.classic_control import rendering
 
 import numpy as np
 import math
@@ -361,12 +362,11 @@ class GridExplore(GridWorld):
 				if self.grid[row][col] == 1:
 					fill_cell(self._base_img, (row, col), cell_size=CELL_SIZE, fill=VISITED_COLOR, margin=0.05)
 
-
+		# return img
 		img = np.asarray(img)
 		if mode == 'rgb_array':
 			return img
 		elif mode == 'human':
-			from gym.envs.classic_control import rendering
 			if self.viewer is None:
 				self.viewer = rendering.SimpleImageViewer()
 			self.viewer.imshow(img)

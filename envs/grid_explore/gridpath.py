@@ -110,7 +110,7 @@ class GridPath(GridWorld):
 	
 		self.action_space = MultiAgentActionSpace([spaces.Discrete(5) for _ in range(self.n_agents)])
 
-		self.render()
+		# self.render()
 
 	def render(self):
 		for i in self.grid:

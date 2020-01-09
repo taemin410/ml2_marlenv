@@ -8,6 +8,7 @@ import policy
 import argparse
 import torch 
 import numpy as np
+from PIL import Image
 # from stable_baselines.common.policies import MlpPolicy
 # from stable_baselines.common.vec_env import SubprocVecEnv
 # from stable_baselines import PPO2
@@ -92,31 +93,126 @@ import numpy as np
 
 # human_1p(args)
 
+import gym
+from gym.spaces import Discrete, Box
+# from ray import tune
+import time 
+import envs
+# from envs.snakegame.graphics import ML2PythonGUI
+import policy
+import argparse
+import torch 
+import numpy as np
+# from stable_baselines.common.policies import MlpPolicy
+# from stable_baselines.common.vec_env import SubprocVecEnv
+# from stable_baselines import PPO2
+import tensorflow as tf 
+from stable_baselines.a2c.utils import conv, linear, conv_to_fc, batch_to_seq, seq_to_batch, lstm
 
-env = gym.make('GridExplore-v1')
+from stable_baselines import DQN, PPO2, A2C
+from stable_baselines.common.vec_env import DummyVecEnv, VecVideoRecorder
+from stable_baselines.common.policies import FeedForwardPolicy, register_policy, ActorCriticPolicy, CnnPolicy, MlpPolicy
+from stable_baselines.common import make_vec_env
+from stable_baselines.deepq.policies import FeedForwardPolicy as DqnFFPolicy
 
 
-env.reset()
-done_n = [False for _ in range(env.n_agents)]
-env.action_space[0].np_random.seed(123)
-totalr= [0 for _ in range(env.n_agents)] 
-while not all(done_n):
-    
-    actions = []
+def custom_cnn(scaled_images, **kwargs):
+    activ = tf.nn.relu
+    layer_1 = activ(conv(scaled_images, 'c1', n_filters=32, filter_size=2, stride=1, init_scale=np.sqrt(2), **kwargs))
+    layer_2 = activ(conv(layer_1, 'c2', n_filters=32, filter_size=2, stride=1, init_scale=np.sqrt(2), **kwargs))
+    layer_3 = conv_to_fc(layer_2)
+    return activ(linear(layer_3, 'fc1', n_hidden=512, init_scale=np.sqrt(2)))
+
+
+class CustomPolicy(FeedForwardPolicy):
+    def __init__(self, *args, **kwargs):
+        super(CustomPolicy, self).__init__(*args, **kwargs,
+                                           net_arch=[dict(pi=[64],
+                                                          vf=[64])],
+                                           feature_extraction="cnn", cnn_extractor =custom_cnn )
+
+class DqnCnnPolicy(DqnFFPolicy):
+    def __init__(self, *args, **kwargs):
+        super(DqnCnnPolicy, self).__init__(*args, **kwargs,
+                                           feature_extraction="cnn", cnn_extractor =custom_cnn )
+
+# Register the policy, it will check that the name is not already taken
+register_policy('CustomPolicy', CustomPolicy)
+register_policy('DqnCnnPolicy', DqnCnnPolicy)
+
+
+def train():
+
+    env = gym.make('GridExplore-v1')
+    env.reset()
+    done_n = [False for _ in range(env.n_agents)]
+    env.action_space[0].np_random.seed(123)
+    totalr= [0 for _ in range(env.n_agents)] 
+    while not all(done_n):
+        
+        actions = []
+        env.render()
+        for i in range(env.n_agents):
+            actions.append(env.action_space[i].sample())
+        s, r, done_n, _ = env.step(actions)
+        print("REWARDS: " , r)
+        totalr += r
+        
+        time.sleep(0.05)
+
+    print("TOTAL REWARDS: " , totalr)
     env.render()
-    for i in range(env.n_agents):
-        actions.append(env.action_space[i].sample())
-    s, r, done_n, _ = env.step(actions)
-    print("REWARDS: " , r)
-    totalr += r
+
+    env.close()
+
     
-    time.sleep(0.05)
+def random():
 
-print("TOTAL REWARDS: " , totalr)
-env.render()
-
-env.close()
+        env = gym.make('GridExplore-v1')
 
 
-# print( a.isNear(a.agentList[0], a.agentList[2],5 ))
+        env.reset()
+        done_n = [False for _ in range(env.n_agents)]
+        env.action_space[0].np_random.seed(123)
+        totalr= [0 for _ in range(env.n_agents)] 
+        while not all(done_n):
+            
+            actions = []
+            env.render()
+            for i in range(env.n_agents):
+                actions.append(env.action_space[i].sample())
+            s, r, done_n, _ = env.step(actions)
+            print("REWARDS: " , r)
+            totalr += r
+            
+            time.sleep(0.05)
+
+        print("TOTAL REWARDS: " , totalr)
+        env.render()
+
+        env.close()
+
+
+def test():
+
+
+        env = gym.make("GridExplore-v0")
+
+        model = PPO2.load("ppo2_GridExplore.pth")
+        images = []
+        obs = env.reset()
+        done = [False for i in range(4)] 
+        while not all(done):
+                action, _ = model.predict(obs)
+                obs, reward, done, info = env.step(action)
+
+                images.append(env.render_graphic())
+                time.sleep(0.05)
+        
+        images.append(env.render_graphic())
+
+        env.close()
+
+        images[0].save('out.gif', save_all=True, append_images=images)
+
 
