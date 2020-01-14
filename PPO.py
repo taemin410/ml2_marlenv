@@ -192,7 +192,7 @@ class PPO:
 
                 # Finding Surrogate Loss:
                 surr1 = ratios * advantages
-                surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages
+                surr2 = ratios.clamp(1-self.eps_clip, 1+self.eps_clip) * advantages
 
                 # loss = -torch.min(surr1, surr2) + 0.5*self.MseLoss(advs , values) - 0.01*ent
                 loss = -torch.min(surr1, surr2) + 0.5*self.MseLoss(returns , values) - 0.01*ent

@@ -7,7 +7,7 @@ import random
 
 register(
 	id='GridExplore-v0',
-	entry_point='envs.grid_explore:GridExplore',
+	entry_point='envs.gridworld:GridExplore',
 	kwargs={
 		'full_observable' : False,
 		'size' : 10
@@ -16,7 +16,7 @@ register(
 
 register(
 	id='GridExplore-v1',
-	entry_point='envs.grid_explore:GridExplore',
+	entry_point='envs.gridworld:GridExplore',
 	kwargs={
 		'full_observable' : False,
 		'size' : 15,
@@ -26,7 +26,7 @@ register(
 
 register(
 	id='GridPath-v0',
-	entry_point='envs.grid_explore:GridPath',
+	entry_point='envs.gridworld:GridPath',
 	kwargs={
 		'full_observable' : False,
 		'size' : 11

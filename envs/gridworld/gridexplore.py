@@ -1,11 +1,11 @@
-from envs.grid_explore.gridworld import GridWorld 
-import random
+from envs.gridworld.gridworld import GridWorld 
 from ..utils.action_space import MultiAgentActionSpace
 from ..utils.observation_space import MultiAgentObservationSpace
 from ..utils.draw import draw_grid, fill_cell, draw_circle, write_cell_text
 from gym.envs.classic_control import rendering
 
 import numpy as np
+import random
 import math
 from gym import spaces
 from PIL import ImageColor

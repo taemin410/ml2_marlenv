@@ -1,11 +1,10 @@
-from envs.grid_explore.gridworld import GridWorld 
+from envs.gridworld.gridworld import GridWorld 
 import random
 from ..utils.action_space import MultiAgentActionSpace
 from ..utils.observation_space import MultiAgentObservationSpace
 from ..utils.draw import draw_grid, fill_cell, draw_circle, write_cell_text
 
 import numpy as np
-import math
 from gym import spaces
 from PIL import ImageColor
 import copy
@@ -38,8 +37,7 @@ class Move:
 
 class Rewards:
 	TIMEPENALTY = -0.1
-	EXPLORATION_BONUS = 1
-	WIN = 100 
+	WIN = 10 
 	CONFLICTPENALTY = -0.5
 
 class Agent:
@@ -164,29 +162,33 @@ class GridPath(GridWorld):
 
 		self.dones = np.zeros(self.n_agents, dtype=bool)
 		
+		return self.observation()
+		
 	def step(self, actions):
 		assert len(actions) == self.n_agents
 
+		#Get previous locations and initializations
 		prevloc = [i.position for i in self.agentList]
 		nextloc = []
 		rewards=np.zeros(4)
 		self.penalty = np.zeros(self.n_agents, dtype=float)
 
+		# Populate action dictionary and candidate next locations
 		actiondict = {}
 		for i in range(len(actions)):
 			if not self.dones[i]:
-
 				actiondict[i] = actions[i]
 				newx, newy = self.agentList[i].move(actions[i], self.grid)
 				nextloc.append((newx,newy))
 			else:
 				nextloc.append(prevloc[i])
 
+		# Resolve conflict if positions overlap
 		conflict = True
 		while conflict:
 			conflict = self.resolveConflict(nextloc, prevloc)
-			
-
+		
+		# Move agents to their final next locations 
 		for index, value in enumerate(nextloc):
 			self.grid[value[1]][value[0]]=Cell.AGENTS[index]
 			self.agent_pos[index] = value[1], value[0]
@@ -204,14 +206,13 @@ class GridPath(GridWorld):
 				rewards[index] += Rewards.TIMEPENALTY
 
 		rewards += self.penalty
-		states=[]
 		infos={}
 
 		# if 1 not in self.grid:
 		# 	dones= [True for a in range(self.n_agents)]
 
 
-		return states, rewards, self.dones, infos
+		return self.observation(), rewards, self.dones, infos
 
 
 	def resolveConflict(self, nextloc, prevloc):
@@ -246,12 +247,8 @@ class GridPath(GridWorld):
 		
 		return [ (i,v) for i, v in movedict.items() if len(v) > 1] 
 
-
-
-
 	def observation(self):
-
-		statearray= np.zeros(self.observation_space[0].shape) 
+		statearray=[]
 		for i in self.agentList:
 
 			state = np.zeros(self.observation_space[0].shape)
@@ -272,15 +269,9 @@ class GridPath(GridWorld):
 				state[2] = destinations
 				state[3] = wall
 
-				statearray = state
+			statearray.append(state)
 		
 		return statearray
-
-
-
-
-
-
 
 	def __init_full_obs(self):
 	    self.agent_pos = copy.copy(self.init_agent_pos)
