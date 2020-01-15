@@ -44,7 +44,7 @@ register_policy('CustomPolicy', CustomPolicy)
 register_policy('DqnCnnPolicy', DqnCnnPolicy)
 
 
-def ppo2train():
+def ppo2train(args):
 
     with tf.device('/device:CUDA:1'):
         # gpus = tf.config.experimental.list_physical_devices('CUDA')
@@ -84,7 +84,7 @@ def ppo2train():
         # model.load("mlppolicy.pth")
         # #mlp0103.pth
 
-def traindqn():
+def traindqn(args):
     
 
     # with tf.device('/device:CUDA:1'):
@@ -105,7 +105,7 @@ def traindqn():
 
 
 
-def test():
+def test(args):
 
     env = make_vec_env('python_1p-v0', n_envs=4)
 
@@ -146,17 +146,17 @@ def test():
 
 def runGUI(args):
 
-    env = gym.make('python_1p-v0', full_observation = True)
-    # env = gym.make('python_4p-v1', full_observation=False, vision_range=20)
+    # env = gym.make('python_1p-v0', full_observation = True)
+    env = gym.make('python_4p-v1', full_observation=False, vision_range=10)
     
     # net = PPO2.load("64batch_wall.pth")
-    # net = PPO2.load("4p_min32step2k20200109-210312.pth")
-    net = PPO2.load("assets/ppo2_GridExplore_10x10.pth")
+    net = PPO2.load("4p_compete.pth")
+    # net = PPO2.load("assets/ppo2_GridExplore_10x10.pth")
 
     gui = envs.ML2PythonGUI(env, args)
 
-    gui.baselines_run(net)
-    # gui.run_model(net)
+    # gui.baselines_run(net)
+    gui.run_model(net)
 
 def runGUImulti(args):
 
