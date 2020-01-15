@@ -149,10 +149,10 @@ class ML2PythonGUI:
 
     def baselines_run(self, model):
 
-        done = False
+        done = [False]
         obs = self.env.reset()
 
-        while not done:
+        while not all(done):
             self.render()
             pygame.display.update()
 

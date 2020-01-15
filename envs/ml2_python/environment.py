@@ -61,6 +61,11 @@ class ML2Python(gym.Env):
             )
         
         self.action_space = Discrete(5)
+        
+        # a = self.observation_space.shape
+        # a = list(a)
+        # a.insert(0, 4)
+        # self.state_shape = tuple(a)
 
         self.reset()
 
@@ -99,7 +104,6 @@ class ML2Python(gym.Env):
         return self.encode()
 
     def step(self, actions):
-        assert len(actions) == self.num_players
         # actions = [actions]
         self.epinfos['step'] += 1
         rewards = np.zeros(self.num_players, dtype=float)
@@ -243,9 +247,9 @@ class ML2Python(gym.Env):
 
         for idx in range(self.num_players):
             if self.field.players[idx].alive:
-                state[0] = body[idx] + wall
-                state[1] = body[idx] + wall
-                state[2] = fruit + wall
+                state[0] = body[idx] 
+                state[1] = body[idx] 
+                state[2] = fruit 
                 state[3] = wall
         # for i in range(4):
         #     state[0][i]=self.field._cells
@@ -275,11 +279,9 @@ class ML2Python(gym.Env):
 
         for idx in range(self.num_players):
             if self.field.players[idx].alive:
-                state[idx][0] = self.get_vision(idx, body[idx]) + self.get_vision(idx, wall)
-                state[idx][1] = self.get_vision(idx, np.sum(body, axis=0) - body[idx])*2 + self.get_vision(idx, wall)
-
-                # state[idx][1] = self.get_vision(idx, np.sum(body, axis=0) - body[idx])
-                # state[idx][1] = fruit 
+                state[idx][0] = self.get_vision(idx, body[idx]) 
+                # state[idx][1] = self.get_vision(idx, np.sum(body, axis=0) - body[idx])*2 + self.get_vision(idx, wall)
+                state[idx][1] = self.get_vision(idx, np.sum(body, axis=0) - body[idx])
                 state[idx][2] = self.get_vision(idx, fruit)
                 state[idx][3] = self.get_vision(idx, wall) 
                 

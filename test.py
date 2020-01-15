@@ -146,22 +146,22 @@ def test():
 
 def runGUI(args):
 
-    env = gym.make('python_1p-v0', full_observation = True)
-    # env = gym.make('python_4p-v1', full_observation=False, vision_range=20)
+    # env = gym.make('python_1p-v0', full_observation = True)
+    env = gym.make('python_4p-v1', full_observation=False, vision_range=10)
     
     # net = PPO2.load("64batch_wall.pth")
     # net = PPO2.load("4p_min32step2k20200109-210312.pth")
-    net = PPO2.load("assets/ppo2_GridExplore_10x10.pth")
+    net = PPO2.load("4p_compete.pth")
 
     gui = envs.ML2PythonGUI(env, args)
 
-    gui.baselines_run(net)
-    # gui.run_model(net)
+    # gui.baselines_run(net)
+    gui.run_model(net)
 
 def runGUImulti(args):
 
     env = gym.make('python_4p-v1', full_observation=False, vision_range=10)
-    net = PPO2.load("4p_min32step2k20200109-210312.pth")
+    net = PPO2.load("4p_compete.pth")
     # net = PPO2.load("4p_map_32b_2kstep.pth")
 
     obs = env.reset()
