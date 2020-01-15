@@ -1,3 +1,4 @@
+README.md
 setup.py
 ml2_marlenv.egg-info/PKG-INFO
 ml2_marlenv.egg-info/SOURCES.txt

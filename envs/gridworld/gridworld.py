@@ -1,9 +1,6 @@
 import gym
 
-
-
 class GridWorld(gym.Env):
-
 
 	def __init__(self):
 		

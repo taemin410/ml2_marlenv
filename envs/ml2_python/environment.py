@@ -23,14 +23,14 @@ class Reward:
     LOSE = -1.0
     WIN = 0
     TIME = 0
+
     # count-based bonus
     alpha = 0
     beta = 0
     NEAR = 0.2
 
 class ML2Python(gym.Env):
-    metadata = {'render.modes': ['rgb_array']}
-
+    # metadata = {'render.modes': ['rgb_array']}
     def __init__(self, init_map, players=None, full_observation=True, vision_range=20, num_fruits=4):
         self.init_map = init_map
         self.players = players
@@ -92,11 +92,14 @@ class ML2Python(gym.Env):
             self.fruit = self.field.get_empty_cell()
             self.field[self.fruit] = Cell.FRUIT
             self.fruits.append(self.fruit)
+        
+        if self.observability:
+            return self.full_observation()
 
         return self.encode()
 
     def step(self, actions):
-        # assert len(actions) == self.num_players
+        assert len(actions) == self.num_players
         # actions = [actions]
         self.epinfos['step'] += 1
         rewards = np.zeros(self.num_players, dtype=float)
@@ -196,6 +199,9 @@ class ML2Python(gym.Env):
         done = False
         if self.dones[0] == True:
             done =True
+        
+        if self.observability:
+            return self.full_observation(), rewards[0], self.dones[0], self.epinfos
 
         return self.encode(), rewards, self.dones, self.epinfos
 

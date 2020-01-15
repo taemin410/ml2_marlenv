@@ -144,18 +144,19 @@ def test():
 
 
 
-def runGUI10(args):
+def runGUI(args):
 
-    # env = gym.make('python_1p-v0')
-    env = gym.make('python_4p-v1', full_observation=False, vision_range=20)
+    env = gym.make('python_1p-v0', full_observation = True)
+    # env = gym.make('python_4p-v1', full_observation=False, vision_range=20)
     
     # net = PPO2.load("64batch_wall.pth")
     # net = PPO2.load("4p_min32step2k20200109-210312.pth")
-    net = PPO2.load("4p_map_32b_2kstep.pth")
+    net = PPO2.load("assets/ppo2_GridExplore_10x10.pth")
+
     gui = envs.ML2PythonGUI(env, args)
 
-    # gui.baselines_run(net)
-    gui.run_model(net)
+    gui.baselines_run(net)
+    # gui.run_model(net)
 
 def runGUImulti(args):
 
@@ -165,7 +166,6 @@ def runGUImulti(args):
 
     obs = env.reset()
 
-    # print(obs.shape, obs)
     done_n = [False for _ in range(4)]
 
     while not all(done_n):
@@ -220,43 +220,29 @@ def saveVideo(args):
             break
     imageio.mimsave('ppo2.gif', np.array(images), fps=15 )
 
-    # env = VecVideoRecorder(env, video_folder,
-    #                    record_video_trigger=lambda x: x == 0, video_length=video_length,
-    #                    name_prefix="ppo-agent-{}".format(env_id))
 
-    # env.start_video_recorder()
+    # env = gym.make("GridExplore-v0")
 
-    # obs = env.reset()
-    # env.getimages()
-
-    # for _ in range(video_length + 1):
-    #     action = [env.action_space.sample()]
-    #     obs, _, _, _ = env.step(action)
-    # env.close()
-    # # Save the video
-    # env.close()
-
-
-    # import imageio
-
+    # model = PPO2.load("ppo2_GridExplore.pth")
     # images = []
     # obs = env.reset()
-    # img = env.render(mode='rgb_array')
-    # for i in range(350):
-    #     images.append(img)
-    #     action, _ = net.predict(obs)
-    #     obs, _, _ ,_ = env.step(action)
-    #     img = env.render(mode='rgb_array')
+    # done = [False for i in range(4)] 
+    # while not all(done):
+    #         action, _ = model.predict(obs)
+    #         obs, reward, done, info = env.step(action)
 
-    # imageio.mimsave('lander_a2c.gif', [np.array(img[0]) for i, img in enumerate(images) if i%2 == 0], fps=29)
+    #         images.append(env.render_graphic())
+    #         time.sleep(0.05)
+    
+    # images.append(env.render_graphic())
 
+    # env.close()
+
+    # images[0].save('out.gif', save_all=True, append_images=images)
 
 
 
 if __name__ == "__main__":
-    # gpus = tf.config.experimental.list_physical_devices('GPU')
-
-    # ppo2train()
 
     parser = argparse.ArgumentParser(description="ml2_snake")
     
@@ -279,5 +265,3 @@ if __name__ == "__main__":
 
     globals()[args.mode](args)
     
-            # gpus = tf.config.experimental.list_physical_devices('GPU')
-        # print(gpus)

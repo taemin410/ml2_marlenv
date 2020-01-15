@@ -7,14 +7,14 @@
 
 <div align="center">
 
-[![Status](https://img.shields.io/badge/status-active-success.svg)]()
+<!-- [![Status](https://img.shields.io/badge/status-active-success.svg)]() -->
 <!-- [![License](https://img.shields.io/badge/license-MIT-blue.svg)](/LICENSE) -->
 
 </div>
 
 ---
 
-<p align="center"> Multi-agent Reinforcement learning environments libs
+<p align="center"> Multi-agent Reinforcement learning environments
     <br> 
 </p>
 
@@ -24,7 +24,7 @@
 - [Getting Started](#getting_started)
 - [Deployment](#deployment)
 - [Usage](#usage)
-- [Built Using](#built_using)
+- [Built Using](#Dependencies)
 - [TODO](../TODO.md)
 - [Contributing](../CONTRIBUTING.md)
 - [Authors](#authors)
@@ -32,26 +32,28 @@
 
 ## 🧐 About <a name = "about"></a>
 
-Winter Intership program for `tmha@ML2`
+Winter Intership program for `tmha@ML2`. [Tae Min Ha / github](https://www.github.com/taemin410)
 
 ## 🏁 Getting Started <a name = "getting_started"></a>
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See [deployment](#deployment) for notes on how to deploy the project on a live system.
 
 ### Prerequisites
 
-What things you need to install the software and how to install them.
-
-```
-Give examples
-```
-
-### Installing
-
+To install requirements for this repo : 
 
 ```
 pip install -e .
 ```
+
+---
+
+## ⛏️ Dependencies <a name = "Dependencies"></a>
+
+- [Gym](https://www.mongodb.com/) - version here
+- [baselines](https://expressjs.com/) - Server Framework
+- [pygames](https://vuejs.org/) - Web Framework
+- [Pillow](https://nodejs.org/en/) - Server Environment
+- []
 
 
 ## 🔧 Running the tests <a name = "tests"></a>
