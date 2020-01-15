@@ -160,7 +160,7 @@ def runGUI10(args):
 def runGUImulti(args):
 
     env = gym.make('python_4p-v1', full_observation=False, vision_range=10)
-    net = PPO2.load("4p_min32step2k20200109-210312.pth")
+    net = PPO2.load("4p_compete.pth")
     # net = PPO2.load("4p_map_32b_2kstep.pth")
 
     obs = env.reset()
