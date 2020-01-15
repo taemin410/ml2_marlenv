@@ -22,7 +22,7 @@ PRE_IDS = {
 
 WALL_COLOR = 'black'
 VISITED_COLOR = 'grey'
-AGENT_COLOR = 'green'
+AGENT_COLOR = ['green', 'blue', 'red', 'yellow']
 
 class Cell:
     UNVISITED = 0
@@ -352,7 +352,7 @@ class GridExplore(GridWorld):
 
 		#Draw Agents with Color and number 
 		for agent_i in range(self.n_agents):
-			draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=AGENT_COLOR)
+			draw_circle(img, self.agent_pos[agent_i], cell_size=CELL_SIZE, fill=AGENT_COLOR[agent_i])
 			write_cell_text(img, text=str(agent_i + 3), pos=self.agent_pos[agent_i], cell_size=CELL_SIZE,
 							fill='white', margin=0.4)
 

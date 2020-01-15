@@ -8,7 +8,6 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import torchvision
 from random import random, sample
-from collections import namedtuple
 import time
 
 

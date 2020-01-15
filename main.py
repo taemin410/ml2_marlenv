@@ -10,7 +10,6 @@ from PPO import Memory, ActorCritic, ConvNet, PPO
 from torch.utils.tensorboard import SummaryWriter
 
 import torchvision
-from collections import namedtuple
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

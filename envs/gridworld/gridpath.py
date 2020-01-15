@@ -1,9 +1,9 @@
 from envs.gridworld.gridworld import GridWorld 
-import random
 from ..utils.action_space import MultiAgentActionSpace
 from ..utils.observation_space import MultiAgentObservationSpace
 from ..utils.draw import draw_grid, fill_cell, draw_circle, write_cell_text
 
+import random
 import numpy as np
 from gym import spaces
 from PIL import ImageColor
