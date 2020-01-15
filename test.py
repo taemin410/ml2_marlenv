@@ -1,120 +1,23 @@
-import gym
-from gym.spaces import Discrete, Box
-# from ray import tune
-import time 
-import envs
-# from envs.snakegame.graphics import ML2PythonGUI
-import policy
-import argparse
-import torch 
-import numpy as np
-from PIL import Image
-# from stable_baselines.common.policies import MlpPolicy
-# from stable_baselines.common.vec_env import SubprocVecEnv
-# from stable_baselines import PPO2
-
-# def make_env(env_id, rank, seed=0):
-#     """
-#     Utility function for multiprocessed env.
-
-#     :param env_id: (str) the environment ID
-#     :param num_env: (int) the number of environments you wish to have in subprocesses
-#     :param seed: (int) the inital seed for RNG
-#     :param rank: (int) index of the subprocess
-#     """
-#     def _init():
-#         env = gym.make(env_id)
-#         env.seed(seed + rank)
-#         return env
-
-#     return _init
-
-# env_id = "GridExplore-v0"
-# num_cpu = 2 # Number of processes to use
-# # Create the vectorized environment
-# env = SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)])
-
-# model= PPO2(MlpPolicy, env, verbose =1 )
-
-# class SimpleCorridor(gym.Env):
-#     def __init__(self, config):
-#         self.end_pos = config["corridor_length"]
-#         self.cur_pos = 0
-#         self.action_space = Discrete(2)
-#         self.observation_space = Box(0.0, self.end_pos, shape=(1, ))
-
-#     def reset(self):
-#         self.cur_pos = 0
-#         return [self.cur_pos]
-
-#     def step(self, action):
-#         if action == 0 and self.cur_pos > 0:
-#             self.cur_pos -= 1
-#         elif action == 1:
-#             self.cur_pos += 1
-#         done = self.cur_pos >= self.end_pos
-#         return [self.cur_pos], 1 if done else 0, done, {}
-
-
-
-# tune.run(
-#     "PPO",
-#     config={
-#         "env": SimpleCorridor,
-#         "num_workers": 3,
-#         "env_config": {"corridor_length": 5}})
-
-
-
-# def human_1p(args):
-#     env = gym.make('Snakegame-v0')
-
-#     n_ac = env.action_space[0].n
-#     in_shape = (env.observation_space[0].shape[1]*2,
-#                 *env.observation_space[0].shape[2:])
-#     net = policy.PythonNet(in_shape, n_ac)
-
-#     gui = ML2PythonGUI(env, args)
-#     gui.run(net)
-
-# parser = argparse.ArgumentParser(description="I Won(Tae)-Chu!")
-
-# parser.add_argument("--tag", type=str, default='snake_test')
-# parser.add_argument("--mode", type=str, default='single')
-# parser.add_argument("--seed", type=int, default=100)
-
-# parser.add_argument_group("interface options")
-# parser.add_argument("--human", action='store_true')
-# parser.add_argument("--cell_size", type=int, default=20)
-
-# args = parser.parse_args()
-# args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-
-# human_1p(args)
-
-import gym
-from gym.spaces import Discrete, Box
-# from ray import tune
-import time 
-import envs
-# from envs.snakegame.graphics import ML2PythonGUI
-import policy
-import argparse
-import torch 
-import numpy as np
-# from stable_baselines.common.policies import MlpPolicy
-# from stable_baselines.common.vec_env import SubprocVecEnv
-# from stable_baselines import PPO2
-import tensorflow as tf 
-from stable_baselines.a2c.utils import conv, linear, conv_to_fc, batch_to_seq, seq_to_batch, lstm
-
-from stable_baselines import DQN, PPO2, A2C
+from stable_baselines import DQN, PPO2, A2C, ACKTR
+# from stable_baselines.bench import Monitor
 from stable_baselines.common.vec_env import DummyVecEnv, VecVideoRecorder
 from stable_baselines.common.policies import FeedForwardPolicy, register_policy, ActorCriticPolicy, CnnPolicy, MlpPolicy
-from stable_baselines.common import make_vec_env
-from stable_baselines.deepq.policies import FeedForwardPolicy as DqnFFPolicy
 
+import random
+import envs
+import gym 
+import argparse
+import time 
+from stable_baselines.common import explained_variance, ActorCriticRLModel, tf_util, SetVerbosity, TensorboardWriter, make_vec_env
+from stable_baselines.a2c.utils import conv, linear, conv_to_fc, batch_to_seq, seq_to_batch, lstm
+
+import tensorflow as tf 
+import numpy as np 
+import torch
+from stable_baselines import DQN
+from stable_baselines.deepq.policies import FeedForwardPolicy as DqnFFPolicy
+from stable_baselines.common.env_checker import check_env
+from utils.common import ArgumentParser, save_model, load_model
 
 def custom_cnn(scaled_images, **kwargs):
     activ = tf.nn.relu
@@ -141,78 +44,223 @@ register_policy('CustomPolicy', CustomPolicy)
 register_policy('DqnCnnPolicy', DqnCnnPolicy)
 
 
-def train():
+def ppo2train():
 
-    env = gym.make('GridExplore-v1')
-    env.reset()
-    done_n = [False for _ in range(env.n_agents)]
-    env.action_space[0].np_random.seed(123)
-    totalr= [0 for _ in range(env.n_agents)] 
-    while not all(done_n):
-        
-        actions = []
-        env.render()
-        for i in range(env.n_agents):
-            actions.append(env.action_space[i].sample())
-        s, r, done_n, _ = env.step(actions)
-        print("REWARDS: " , r)
-        totalr += r
-        
-        time.sleep(0.05)
+    with tf.device('/device:CUDA:1'):
+        # gpus = tf.config.experimental.list_physical_devices('CUDA')
 
-    print("TOTAL REWARDS: " , totalr)
-    env.render()
+        # tf.config.experimental.set_visible_devices(gpus[1], 'CUDA')
+        env = make_vec_env('python_1p-v0', n_envs=4)
 
-    env.close()
+        # env = gym.make('python_1p-v0')
+        # env = Monitor(env, filename=None, allow_early_resets=True)
+        # env = DummyVecEnv([lambda: env])
 
+        model = PPO2(CustomPolicy, env, verbose=1, n_steps=500, nminibatches=16)
+        model.learn(5000000)
+        model.save("ppo2withcnnxr.pth")
+
+        mean = 0
+        finished = 0
+        rewards=0
+        for i in range(10):
+            obs = env.reset()
+            for step in range(500):
+                action, _ = model.predict(obs)
+
+                obs, reward, done, info = env.step(action)
+                rewards += reward 
+
+                env.env_method("render")
+                if all(done):
+                    break
+                time.sleep(0.05)
+            print(rewards , " points " )
+            mean += rewards
+            
+            finished +=1 
+
+        print("mean score : " , mean/10)
+        # model.load("mlppolicy.pth")
+        # #mlp0103.pth
+
+def traindqn():
     
-def random():
 
-        env = gym.make('GridExplore-v1')
+    # with tf.device('/device:CUDA:1'):
+    with tf.device('/gpu:0'):
+
+        env = gym.make('python_1p-v0')
+        # env = Monitor(env, filename=None, allow_early_resets=True)
+        env = DummyVecEnv([lambda: env])
+
+        model = DQN(DqnCnnPolicy, env, verbose=1,learning_rate=0.0001, exploration_fraction=0.4, train_freq=10)
+        model.learn(5000000)
+        model.save("dqnwithcnn.pth")
+
+        # model.load("mlppolicy.pth")
+        # #mlp0103.pth
 
 
-        env.reset()
-        done_n = [False for _ in range(env.n_agents)]
-        env.action_space[0].np_random.seed(123)
-        totalr= [0 for _ in range(env.n_agents)] 
-        while not all(done_n):
-            
-            actions = []
-            env.render()
-            for i in range(env.n_agents):
-                actions.append(env.action_space[i].sample())
-            s, r, done_n, _ = env.step(actions)
-            print("REWARDS: " , r)
-            totalr += r
-            
-            time.sleep(0.05)
 
-        print("TOTAL REWARDS: " , totalr)
-        env.render()
-
-        env.close()
 
 
 def test():
 
+    env = make_vec_env('python_1p-v0', n_envs=4)
 
-        env = gym.make("GridExplore-v0")
+    # env = gym.make('python_1p-v0')
+    # env = Monitor(env, filename=None, allow_early_resets=True)
+    # env = DummyVecEnv([lambda: env])
 
-        model = PPO2.load("ppo2_GridExplore.pth")
-        images = []
-        obs = env.reset()
-        done = [False for i in range(4)] 
-        while not all(done):
-                action, _ = model.predict(obs)
-                obs, reward, done, info = env.step(action)
+    # model = PPO2(CustomPolicy, env, verbose=1, n_steps=500, nminibatches=16)
 
-                images.append(env.render_graphic())
-                time.sleep(0.05)
+    model = PPO2.load("ppo2initial.pth")
+
+
+    mean = 0
+    finished = 0
+    while finished != 100:
+            
+        obs= env.reset()
+        # print(state)
+        rewards = 0 
+        for step in range(500):
+            action, _ = model.predict(obs)
+
+            obs, reward, done, info = env.step(action)
+            rewards += reward 
+
+            env.env_method("render")
+            if all(done):
+                break
+            time.sleep(0.05)
+        print(rewards , " points " )
+        mean += rewards
         
-        images.append(env.render_graphic())
+        finished +=1 
 
-        env.close()
-
-        images[0].save('out.gif', save_all=True, append_images=images)
+    print("mean score : " , mean/100)
 
 
+
+def runGUI10(args):
+
+    # env = gym.make('python_1p-v0')
+    env = gym.make('python_4p-v1', full_observation=False, vision_range=20)
+    
+    # net = PPO2.load("64batch_wall.pth")
+    # net = PPO2.load("4p_min32step2k20200109-210312.pth")
+    net = PPO2.load("4p_map_32b_2kstep.pth")
+    gui = envs.ML2PythonGUI(env, args)
+
+    # gui.baselines_run(net)
+    gui.run_model(net)
+
+def runGUImulti(args):
+
+    env = gym.make('python_4p-v1', full_observation=False, vision_range=10)
+    net = PPO2.load("4p_min32step2k20200109-210312.pth")
+    # net = PPO2.load("4p_map_32b_2kstep.pth")
+
+    obs = env.reset()
+
+    done_n = [False for _ in range(4)]
+
+    while not all(done_n):
+        actions = []
+        for i in range(4):
+            action , _ = net.predict(obs[i])
+            # print(action)
+            actions.append(action)
+
+        obs, reward, done_n, info = env.step(actions)
+
+        env.render()
+        time.sleep(0.05)
+
+    env.close()
+
+
+def saveVideo(args):
+    import gym
+    from stable_baselines.common.vec_env import VecVideoRecorder, DummyVecEnv
+    from gym.wrappers import Monitor
+    import imageio
+    from PIL import Image
+
+    env_id = 'python_1p-v1'
+
+    env = gym.make('python_1p-v0')
+    env = Monitor(env, directory='video',video_callable=lambda episode_id: True, force=True)
+
+    # ppo multiagent
+    # shape addition to relative position
+    # batch snake action 
+    
+    video_folder = 'logs/videos/'
+    video_length = 100
+    # env = DummyVecEnv([lambda: gym.make(env_id)])
+    # env = Monitor(env, './video', force=store_true)
+    net = PPO2.load("ppo2_10x10.pth")
+    images=[]
+    obs= env.reset()
+    img = env.render()
+    while True:
+        image = Image.fromarray(img)
+
+        image = image.resize((400, 400))  
+        image = np.asarray(image, dtype="uint8" )
+        images.append(image)
+        img = env.render()
+        action , _ = net.predict(obs)
+        obs, r, done, info = env.step(action)
+        if done: 
+            break
+    imageio.mimsave('ppo2.gif', np.array(images), fps=15 )
+
+
+    # env = gym.make("GridExplore-v0")
+
+    # model = PPO2.load("ppo2_GridExplore.pth")
+    # images = []
+    # obs = env.reset()
+    # done = [False for i in range(4)] 
+    # while not all(done):
+    #         action, _ = model.predict(obs)
+    #         obs, reward, done, info = env.step(action)
+
+    #         images.append(env.render_graphic())
+    #         time.sleep(0.05)
+    
+    # images.append(env.render_graphic())
+
+    # env.close()
+
+    # images[0].save('out.gif', save_all=True, append_images=images)
+
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="ml2_snake")
+    
+    parser.add_argument("--mode", type=str, default='runGUI')
+    parser.add_argument("--seed", type=int, default=0)
+
+    parser.add_argument_group("interface options")
+    parser.add_argument("--human", action='store_true')
+    parser.add_argument("--cell_size", type=int, default=20)
+
+    args = parser.parse_args()
+    
+
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
+
+    args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    globals()[args.mode](args)
+    
